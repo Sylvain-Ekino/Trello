@@ -25,6 +25,7 @@
     select, button, input {
       padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff;
     }
+    input[type="password"] { min-width: 260px; }
     .muted { color: #6b7280; font-size: 13px; }
     .danger { color: #b91c1c; font-size: 13px; }
   </style>
@@ -42,6 +43,12 @@
     <button id="refreshBtn">Rafraîchir</button>
     <button id="logoutBtn" title="Oublier le token stocké sur ce navigateur">Oublier le token</button>
 
+    <!-- Token input (remplace la pop-in) -->
+    <div class="pill">
+      <input id="tokenInput" type="password" placeholder="Trello token" />
+      <button id="saveTokenBtn">Valider le token</button>
+    </div>
+
     <span class="muted" id="status"></span>
     <span class="danger" id="error"></span>
   </header>
@@ -49,4 +56,213 @@
   <div id="calendar"></div>
 
   <script>
-    // ===================
+    // =========================
+    // CONFIG (OK en clair)
+    // =========================
+    const TRELLO = {
+      key: "ec995ad68de9cdaafd64b131e5fa00ec",
+      boardId: "6490c5416cea9255ba3b0383"
+      // IMPORTANT : ne PAS mettre de token ici (Option B1)
+      // IMPORTANT : le "Secret" Trello n'est PAS utilisé côté front
+    };
+
+    // Champs essentiels (pas de description)
+    const CARD_FIELDS = "name,due,start,closed,url,idLabels,labels";
+    const API_BASE = "https://api.trello.com/1";
+
+    let allEvents = [];
+    let calendar;
+
+    // =========================
+    // UI helpers
+    // =========================
+    function setStatus(msg) {
+      document.getElementById("status").textContent = msg || "";
+    }
+    function setError(msg) {
+      document.getElementById("error").textContent = msg || "";
+    }
+
+    // =========================
+    // Token handling (B1 sans prompt)
+    // =========================
+    function getToken() {
+      return localStorage.getItem("trello_token");
+    }
+
+    function saveToken(token) {
+      localStorage.setItem("trello_token", token);
+    }
+
+    function forgetToken() {
+      localStorage.removeItem("trello_token");
+      document.getElementById("tokenInput").value = "";
+      calendar?.removeAllEvents();
+      setError("");
+      setStatus("Token supprimé sur ce navigateur.");
+    }
+
+    // =========================
+    // Small utils
+    // =========================
+    function qs(params) {
+      const u = new URLSearchParams(params);
+      return u.toString();
+    }
+
+    function uniqBy(arr, keyFn) {
+      const seen = new Set();
+      return arr.filter(x => {
+        const k = keyFn(x);
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+    }
+
+    // =========================
+    // Data fetching
+    // =========================
+    async function fetchBoardCards(token) {
+      const url = `${API_BASE}/boards/${encodeURIComponent(TRELLO.boardId)}/cards?` + qs({
+        key: TRELLO.key,
+        token,
+        fields: CARD_FIELDS,
+        filter: "open"
+      });
+
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(`Trello API error (${res.status})`);
+      }
+      return res.json();
+    }
+
+    // Trello card -> FullCalendar event
+    function cardToEvent(card) {
+      const start = card.due || card.start;
+      if (!start) return null;
+
+      return {
+        id: card.id,
+        title: card.name,
+        start,
+        allDay: true,
+        url: card.url,
+        extendedProps: {
+          labelIds: card.idLabels || [],
+          labels: (card.labels || []).map(l => ({ id: l.id, name: l.name, color: l.color })),
+          closed: !!card.closed
+        }
+      };
+    }
+
+    function rebuildLabelDropdown(events) {
+      const select = document.getElementById("labelFilter");
+      const labels = [];
+
+      for (const ev of events) {
+        for (const l of (ev.extendedProps.labels || [])) {
+          if (l.name && l.id) labels.push(l);
+        }
+      }
+
+      const unique = uniqBy(labels, l => l.id).sort((a,b) => a.name.localeCompare(b.name, "fr"));
+      const current = select.value || "__ALL__";
+
+      select.innerHTML = "";
+      select.appendChild(new Option("Tous", "__ALL__"));
+      for (const l of unique) select.appendChild(new Option(l.name, l.id));
+
+      select.value = [...select.options].some(o => o.value === current) ? current : "__ALL__";
+    }
+
+    function applyFilter() {
+      const labelId = document.getElementById("labelFilter").value;
+
+      const filtered = (labelId === "__ALL__")
+        ? allEvents
+        : allEvents.filter(ev => (ev.extendedProps.labelIds || []).includes(labelId));
+
+      calendar.removeAllEvents();
+      calendar.addEventSource(filtered);
+      setStatus(`${filtered.length} tâche(s) affichée(s)`);
+    }
+
+    async function load() {
+      setError("");
+
+      const token = getToken();
+      if (!token) {
+        setStatus("Renseigne ton token Trello puis clique sur “Valider le token”.");
+        calendar?.removeAllEvents();
+        return;
+      }
+
+      setStatus("Chargement Trello…");
+      const cards = await fetchBoardCards(token);
+
+      allEvents = cards.map(cardToEvent).filter(Boolean);
+
+      rebuildLabelDropdown(allEvents);
+      applyFilter();
+
+      setError("");
+    }
+
+    // =========================
+    // Init calendar
+    // =========================
+    document.addEventListener("DOMContentLoaded", () => {
+      const el = document.getElementById("calendar");
+
+      calendar = new FullCalendar.Calendar(el, {
+        initialView: "dayGridMonth",
+        height: "auto",
+        locale: "fr",
+        firstDay: 1,
+
+        headerToolbar: {
+          left: "prev,next today",
+          center: "title",
+          right: "dayGridMonth,timeGridWeek,listMonth"
+        },
+
+        // Dense / large
+        dayMaxEvents: true,
+        eventDisplay: "block",
+
+        eventClick(info) {
+          info.jsEvent.preventDefault();
+          if (info.event.url) window.open(info.event.url, "_blank", "noopener,noreferrer");
+        }
+      });
+
+      calendar.render();
+
+      document.getElementById("labelFilter").addEventListener("change", applyFilter);
+
+      document.getElementById("refreshBtn").addEventListener("click", () =>
+        load().catch(err => { setError(err.message); setStatus(""); })
+      );
+
+      document.getElementById("logoutBtn").addEventListener("click", forgetToken);
+
+      document.getElementById("saveTokenBtn").addEventListener("click", () => {
+        const input = document.getElementById("tokenInput");
+        const token = input.value.trim();
+        if (!token) {
+          setError("Token manquant.");
+          return;
+        }
+        saveToken(token);
+        input.value = "";
+        load().catch(err => { setError(err.message); setStatus(""); });
+      });
+
+      // Auto-load si token déjà présent
+      load().catch(err => { setError(err.message); setStatus(""); });
+    });
+  </script>
+</body>
+</html>
