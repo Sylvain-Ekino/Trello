@@ -11,8 +11,13 @@
 <style>
 :root{
   --bg:#f6f7fb; --border:#e5e7eb; --muted:#64748b;
-  --left:230px; --pad:8px; --bar:14px;
+  --left:320px; /* un peu plus large pour afficher sous-tâches + date limite */
+  --row:28px;   /* hauteur de ligne carte */
+  --subrow:24px;/* hauteur de ligne sous-tâche */
+  --padY:6px;
+  --barH:14px;
 }
+
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .container{max-width:1280px;margin:auto;padding:0 10px}
@@ -35,92 +40,8 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .btn{cursor:pointer}
 .token{display:flex;gap:4px}
 
-/* Dropdown tags (checkbox list) */
-.ddbtn{
-  border:0;
-  background:transparent;
-  font-weight:900;
-  font-size:12px;
-  padding:0;
-  cursor:pointer;
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  max-width: 220px;
-}
-.ddbtn .lbl{
-  max-width: 200px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ddbtn .caret{opacity:.6;font-size:11px}
-.dd{
-  position:absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  min-width: 260px;
-  max-width: min(360px, calc(100vw - 22px));
-  background:#fff;
-  border:1px solid var(--border);
-  border-radius:12px;
-  box-shadow: 0 18px 45px rgba(2,6,23,.14);
-  padding:6px;
-  display:none;
-  z-index: 999;
-}
-.dd.open{display:block}
-.dd .row{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:8px 8px;
-  border-radius:10px;
-}
-.dd .row:hover{background:#f8fafc}
-.dd input[type="checkbox"]{width:16px;height:16px}
-.dd .name{
-  font-weight:900;
-  font-size:12px;
-  min-width:0;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.dd .dot{
-  width:10px;height:10px;border-radius:999px;flex:0 0 auto;
-  border:1px solid rgba(15,23,42,.10);
-}
-.dd .actions{
-  display:flex;
-  gap:6px;
-  padding:6px 6px 4px;
-  border-top:1px solid var(--border);
-  margin-top:6px;
-}
-.dd .mini{
-  border:1px solid var(--border);
-  background:#fff;
-  border-radius:10px;
-  padding:6px 8px;
-  font-weight:900;
-  font-size:12px;
-  cursor:pointer;
-}
-.dd .mini:active{transform:translateY(1px)}
-.dd .search{
-  width:100%;
-  border:1px solid var(--border);
-  border-radius:10px;
-  padding:8px 10px;
-  font-weight:900;
-  font-size:12px;
-  outline:none;
-  margin:6px 0 4px;
-}
-
-/* Panel */
 .panel{margin-top:6px;border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden}
+
 #calendar{padding:4px 6px;border-bottom:1px solid var(--border)}
 .fc .fc-view-harness{display:none}
 .fc .fc-toolbar-title{font-size:13px;font-weight:900}
@@ -130,9 +51,9 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .shell{border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .head{display:grid;grid-template-columns:var(--left) 1fr;border-bottom:1px solid var(--border)}
 .hl{border-right:1px solid var(--border);padding:4px 6px;font-size:10px;font-weight:900;color:var(--muted)}
-.hr{padding:4px 6px}
+.hr{padding:4px 6px;overflow:hidden}
 .ticks{display:flex}
-.tick{width:var(--week);font-size:10px;font-weight:900;color:var(--muted);white-space:nowrap}
+.tick{width:var(--week);font-size:10px;font-weight:900;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .scroll{display:grid;grid-template-columns:var(--left) 1fr;max-height:75vh}
 .left{border-right:1px solid var(--border);overflow:auto}
@@ -150,24 +71,136 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   pointer-events:none;
 }
 
-.list{border-bottom:1px solid var(--border);padding:6px;font-size:12px;font-weight:900}
-.lane{position:relative;border-bottom:1px solid var(--border)}
-.inner{position:absolute;inset:0;padding:var(--pad) 0}
+.rowL, .rowR{
+  border-bottom:1px solid var(--border);
+}
+.rowL{
+  display:flex;align-items:center;gap:8px;
+  padding:0 8px;
+  height:var(--row);
+  cursor:pointer;
+  user-select:none;
+}
+.rowL:hover{background:#f8fafc}
+.rowL .chev{width:14px;opacity:.55;font-weight:900}
+.rowL .title{
+  min-width:0;flex:1 1 auto;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-size:12px;font-weight:900;
+}
+.rowL .due{
+  flex:0 0 auto;
+  font-size:11px;font-weight:900;color:var(--muted);
+}
+
+.subL{
+  display:flex;align-items:center;gap:8px;
+  padding:0 8px 0 28px; /* indentation */
+  height:var(--subrow);
+  cursor:pointer;
+  user-select:none;
+}
+.subL:hover{background:#f8fafc}
+.subL .dot{
+  width:8px;height:8px;border-radius:2px;transform:rotate(45deg);
+  border:1px solid rgba(15,23,42,.10);
+}
+.subL .stitle{
+  min-width:0;flex:1 1 auto;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-size:12px;font-weight:800;
+}
+.subL .sdue{
+  flex:0 0 auto;
+  font-size:11px;font-weight:900;color:var(--muted);
+}
+
+.rowR{
+  height:var(--row);
+  position:relative;
+}
+.subR{
+  height:var(--subrow);
+  position:relative;
+}
 
 .bar{
-  position:absolute;height:var(--bar);
-  border-radius:8px;padding:0 6px;
+  position:absolute;
+  height:var(--barH);
+  border-radius:8px;
+  padding:0 6px;
   font-size:11px;font-weight:900;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   cursor:pointer;
+  top:50%;
+  transform:translateY(-50%);
+  box-shadow:0 10px 18px rgba(2,6,23,.10);
+  border:1px solid rgba(15,23,42,.10);
 }
 .milestone{
   position:absolute;width:10px;height:10px;
   transform:translate(-50%,-50%) rotate(45deg);
   border-radius:2px;cursor:pointer;
+  top:50%;
+  box-shadow:0 10px 18px rgba(2,6,23,.10);
+  border:1px solid rgba(15,23,42,.10);
 }
 
-/* Tooltip (kept, but no extra text in UI) */
+/* Dropdown tags (checkbox list) */
+.ddbtn{
+  border:0;background:transparent;
+  font-weight:900;font-size:12px;padding:0;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  max-width: 220px;
+}
+.ddbtn .lbl{max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ddbtn .caret{opacity:.6;font-size:11px}
+.dd{
+  position:absolute;top: calc(100% + 6px);left:0;
+  min-width: 260px;
+  max-width: min(360px, calc(100vw - 22px));
+  background:#fff;border:1px solid var(--border);border-radius:12px;
+  box-shadow: 0 18px 45px rgba(2,6,23,.14);
+  padding:6px;display:none;z-index:999;
+}
+.dd.open{display:block}
+.dd .search{
+  width:100%;border:1px solid var(--border);
+  border-radius:10px;padding:8px 10px;
+  font-weight:900;font-size:12px;outline:none;margin:6px 0 4px;
+}
+.dd .row{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 8px;border-radius:10px;
+}
+.dd .row:hover{background:#f8fafc}
+.dd input[type="checkbox"]{width:16px;height:16px}
+.dd .name{
+  font-weight:900;font-size:12px;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.dd .dotc{
+  width:10px;height:10px;border-radius:999px;flex:0 0 auto;
+  border:1px solid rgba(15,23,42,.10);
+}
+.dd .actions{
+  display:flex;gap:6px;padding:6px 6px 4px;
+  border-top:1px solid var(--border);margin-top:6px;
+}
+.dd .mini{
+  border:1px solid var(--border);background:#fff;border-radius:10px;
+  padding:6px 8px;font-weight:900;font-size:12px;cursor:pointer;
+}
+
+@media (max-width: 760px){
+  :root{ --left: 240px; }
+}
+@media (max-width: 520px){
+  :root{ --left: 190px; }
+  .rowL .due, .subL .sdue{display:none;}
+}
+
+/* Tooltip */
 .tt{
   position:fixed;z-index:999;
   background:#fff;border:1px solid var(--border);
@@ -184,7 +217,6 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 </head>
 
 <body>
-
 <div class="topbar">
   <div class="container">
     <div class="controls">
@@ -194,7 +226,6 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
           <span class="lbl" id="tagsBtnLabel">Tous</span>
           <span class="caret">▾</span>
         </button>
-
         <div class="dd" id="tagsDropdown" role="menu" aria-label="Tags">
           <input class="search" id="tagsSearch" placeholder="Filtrer tags…" />
           <div id="tagsList"></div>
@@ -235,6 +266,7 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 </div>
 
 <script>
+/* ================= CONFIG ================= */
 const TRELLO={key:"ec995ad68de9cdaafd64b131e5fa00ec",boardId:"6490c5416cea9255ba3b0383"};
 const DONE=new Set(["🎉 Terminé"]);
 const COLORS={
@@ -245,22 +277,34 @@ const COLORS={
 const API="https://api.trello.com/1";
 
 let calendar;
-let allEvents=[];
+let allCards=[];      // source cards (already excluding 🎉 Terminé + no dates)
+let filteredCards=[]; // after tag/search filters
 let listNames=new Map();
 let doneListIds=new Set();
 
-// tags model: [{name, color, hex}]
-let allTags=[];                 // sorted
-let selectedTags=new Set();     // by name
+let allTags=[];              // {name,color,hex} sorted
+let selectedTags=new Set();  // by name
 const TAGS_KEY="tc_selected_tags";
+const EXPAND_KEY="tc_expanded_cards";
 
+let expandedCards=new Set(); // cardId
+const checklistCache=new Map(); // cardId -> {loaded, checklists}
+
+/* ================= HELPERS ================= */
 const qs=o=>new URLSearchParams(o).toString();
-const day=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x};
-const diff=(a,b)=>Math.round((day(b)-day(a))/86400000);
-const esc=s=>String(s).replace(/[&<>"]/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[m]));
 const token=()=>localStorage.getItem("trello_token");
+const day=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x};
+const diffDays=(a,b)=>Math.round((day(b)-day(a))/86400000);
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[m]));
+function fmtDue(iso){
+  if(!iso) return "";
+  const d=new Date(iso);
+  if(Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat("fr",{day:"2-digit",month:"short"}).format(d);
+}
+function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
 
-/* Tooltip */
+/* ================= TOOLTIP (checklists) ================= */
 let ttEl=null;
 function ensureTT(){
   if(ttEl) return ttEl;
@@ -277,13 +321,15 @@ function moveTT(e){
   const vw=window.innerWidth, vh=window.innerHeight;
   if(x+r.width+pad>vw) x=vw-r.width-pad;
   if(y+r.height+pad>vh) y=vh-r.height-pad;
-  ttEl.style.left=x+"px";
-  ttEl.style.top=y+"px";
+  ttEl.style.left=x+"px"; ttEl.style.top=y+"px";
 }
-function hideTT(){
-  if(!ttEl) return;
-  ttEl.style.display="none";
-  ttEl.innerHTML="";
+function hideTT(){ if(ttEl){ ttEl.style.display="none"; ttEl.innerHTML=""; } }
+
+async function fetchCardChecklists(cardId){
+  const url = `${API}/cards/${encodeURIComponent(cardId)}/checklists?` + qs({key:TRELLO.key, token:token()});
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("Checklist fetch failed");
+  return res.json();
 }
 function renderChecklistHtml(checklists){
   if(!checklists || checklists.length===0) return `<div class="meta">Aucune checklist</div>`;
@@ -303,69 +349,18 @@ function renderChecklistHtml(checklists){
   }
   return html;
 }
-const checklistCache=new Map();
-async function fetchCardChecklists(cardId){
-  const url = `${API}/cards/${encodeURIComponent(cardId)}/checklists?` + qs({key:TRELLO.key, token:token()});
-  const res = await fetch(url);
-  if(!res.ok) throw new Error("Checklist fetch failed");
-  return res.json();
-}
 
-/* ========== LOAD ========== */
-async function load(){
-  if(!token()){ render([]); return; }
-
-  const [lists,cards]=await Promise.all([
-    fetch(`${API}/boards/${TRELLO.boardId}/lists?${qs({key:TRELLO.key,token:token(),filter:"open",fields:"name"})}`).then(r=>r.json()),
-    fetch(`${API}/boards/${TRELLO.boardId}/cards?${qs({key:TRELLO.key,token:token(),filter:"open",fields:"name,start,due,idList,labels,url"})}`).then(r=>r.json())
-  ]);
-
-  listNames=new Map(lists.map(l=>[l.id,l.name]));
-  doneListIds=new Set(lists.filter(l=>DONE.has(l.name)).map(l=>l.id));
-
-  allEvents=cards.map(c=>{
-    if(doneListIds.has(c.idList)) return null;
-    if(!c.start && !c.due) return null;
-
-    const start=c.start||c.due;
-    const end=(c.start && c.due)
-      ? new Date(new Date(c.due).getTime()+86400000).toISOString()
-      : undefined;
-
-    const labels=(c.labels||[]).map(l=>({name:l.name||"", color:l.color||null}));
-    const firstColored=labels.find(l=>l.color)?.color;
-    const baseColor=COLORS[firstColored] || "#475569";
-
-    return{
-      id:c.id,
-      title:c.name,
-      start,
-      end,
-      url:c.url,
-      list:listNames.get(c.idList)||"",
-      labels,            // [{name,color}]
-      baseColor
-    };
-  }).filter(Boolean);
-
-  rebuildTagsModel();
-  restoreSelectedTags();
-  renderTagsDropdown(); // builds checkbox list
-  applyFilters();
-}
-
-/* ========== TAGS MODEL (sorted A→Z) ========== */
+/* ================= TAGS (A→Z) ================= */
 function rebuildTagsModel(){
   const map=new Map(); // name -> {name,color,hex}
-  for(const e of allEvents){
-    for(const l of e.labels){
+  for(const c of allCards){
+    for(const l of c.labels){
       const name=(l.name||"").trim();
       if(!name) continue;
       if(!map.has(name)){
         const hex = l.color ? (COLORS[l.color] || null) : null;
         map.set(name,{name,color:l.color||null,hex});
       }else{
-        // keep first known color if missing
         const cur=map.get(name);
         if(!cur.color && l.color){
           cur.color=l.color;
@@ -376,7 +371,6 @@ function rebuildTagsModel(){
   }
   allTags=[...map.values()].sort((a,b)=>a.name.localeCompare(b.name,"fr",{sensitivity:"base"}));
 }
-
 function restoreSelectedTags(){
   selectedTags=new Set();
   try{
@@ -387,11 +381,9 @@ function restoreSelectedTags(){
     }
   }catch{}
 }
-
 function persistSelectedTags(){
   localStorage.setItem(TAGS_KEY, JSON.stringify([...selectedTags]));
 }
-
 function setTagsBtnLabel(){
   const el=document.getElementById("tagsBtnLabel");
   const n=selectedTags.size;
@@ -399,13 +391,11 @@ function setTagsBtnLabel(){
   else if(n===1) el.textContent=[...selectedTags][0];
   else el.textContent=`${n} tags`;
 }
-
-/* ========== TAGS DROPDOWN UI ========== */
 function renderTagsDropdown(){
   const listEl=document.getElementById("tagsList");
   const q=(document.getElementById("tagsSearch").value||"").trim().toLowerCase();
-
   listEl.innerHTML="";
+
   for(const t of allTags){
     if(q && !t.name.toLowerCase().includes(q)) continue;
 
@@ -415,10 +405,6 @@ function renderTagsDropdown(){
     const row=document.createElement("label");
     row.className="row";
     row.setAttribute("for", id);
-
-    const dot=document.createElement("span");
-    dot.className="dot";
-    dot.style.background = t.hex || "#e2e8f0";
 
     const cb=document.createElement("input");
     cb.type="checkbox";
@@ -432,6 +418,10 @@ function renderTagsDropdown(){
       applyFilters();
     });
 
+    const dot=document.createElement("span");
+    dot.className="dotc";
+    dot.style.background = t.hex || "#e2e8f0";
+
     const name=document.createElement("div");
     name.className="name";
     name.textContent=t.name;
@@ -444,12 +434,10 @@ function renderTagsDropdown(){
 
   setTagsBtnLabel();
 }
-
 function openTags(){
   const dd=document.getElementById("tagsDropdown");
   dd.classList.add("open");
   document.getElementById("tagsBtn").setAttribute("aria-expanded","true");
-  // focus search for fast filtering
   setTimeout(()=>document.getElementById("tagsSearch").focus(), 0);
 }
 function closeTags(){
@@ -462,91 +450,258 @@ function toggleTags(){
   dd.classList.contains("open") ? closeTags() : openTags();
 }
 
-/* ========== FILTER ========== */
+/* ================= EXPAND STATE ================= */
+function restoreExpanded(){
+  expandedCards=new Set();
+  try{
+    const raw=localStorage.getItem(EXPAND_KEY);
+    const arr=raw?JSON.parse(raw):[];
+    for(const id of arr) expandedCards.add(id);
+  }catch{}
+}
+function persistExpanded(){
+  localStorage.setItem(EXPAND_KEY, JSON.stringify([...expandedCards]));
+}
+
+/* ================= LOAD ================= */
+async function fetchBoardLists(){
+  const url = `${API}/boards/${encodeURIComponent(TRELLO.boardId)}/lists?` + qs({
+    key:TRELLO.key, token:token(), fields:"name", filter:"open"
+  });
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("Lists fetch failed");
+  return res.json();
+}
+async function fetchBoardCards(){
+  const url = `${API}/boards/${encodeURIComponent(TRELLO.boardId)}/cards?` + qs({
+    key:TRELLO.key, token:token(), fields:"name,start,due,idList,labels,url", filter:"open"
+  });
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("Cards fetch failed");
+  return res.json();
+}
+
+async function load(){
+  if(!token()){ renderGantt([]); return; }
+
+  const [lists,cards]=await Promise.all([fetchBoardLists(), fetchBoardCards()]);
+
+  listNames=new Map(lists.map(l=>[l.id,l.name]));
+  doneListIds=new Set(lists.filter(l=>DONE.has(l.name)).map(l=>l.id));
+
+  allCards = cards.map(c=>{
+    if(doneListIds.has(c.idList)) return null;
+    if(!c.start && !c.due) return null;
+
+    const start=c.start||c.due;
+    const end=(c.start && c.due)
+      ? new Date(new Date(c.due).getTime()+86400000).toISOString()
+      : undefined;
+
+    const labels=(c.labels||[]).map(l=>({name:l.name||"", color:l.color||null}));
+    const firstColored=labels.find(l=>l.color)?.color;
+    const baseColor=COLORS[firstColored] || "#475569";
+
+    return {
+      id:c.id,
+      title:c.name,
+      start,
+      end,
+      due:c.due || null,
+      url:c.url,
+      list:listNames.get(c.idList)||"",
+      labels,
+      baseColor
+    };
+  }).filter(Boolean);
+
+  rebuildTagsModel();
+  restoreSelectedTags();
+  renderTagsDropdown();
+
+  restoreExpanded();
+  applyFilters();
+}
+
+/* ================= FILTERS ================= */
 function applyFilters(){
   const q=(document.getElementById("searchInput").value||"").trim().toLowerCase();
   const selected=[...selectedTags];
 
-  let filtered=allEvents.filter(e=>{
-    const tagOK = selected.length===0 || e.labels.some(l=>selected.includes((l.name||"").trim()));
-    const textOK = !q || e.title.toLowerCase().includes(q) || e.list.toLowerCase().includes(q);
+  filteredCards = allCards.filter(c=>{
+    const tagOK = selected.length===0 || c.labels.some(l=>selected.includes((l.name||"").trim()));
+    const textOK = !q || c.title.toLowerCase().includes(q) || c.list.toLowerCase().includes(q);
     return tagOK && textOK;
   });
 
-  // couleur homogène si 1 seul tag
+  // couleur homogène si 1 seul tag coché
   if(selected.length===1){
     const tag=selected[0];
     const info=allTags.find(t=>t.name===tag);
     if(info?.hex){
-      filtered = filtered.map(e=>({ ...e, baseColor: info.hex }));
+      filteredCards = filteredCards.map(c=>({ ...c, baseColor: info.hex }));
     }
   }
 
   calendar.removeAllEvents();
-  calendar.addEventSource(filtered);
-  render(filtered);
+  calendar.addEventSource(filteredCards.map(c=>({
+    id:c.id, title:c.title, start:c.start, end:c.end || undefined, allDay:true,
+    url:c.url,
+    backgroundColor:c.baseColor, borderColor:c.baseColor, textColor:"#fff",
+    extendedProps:{ listName:c.list }
+  })));
+
+  renderGantt(filteredCards);
 }
 
-/* ========== GANTT ========== */
-function pack(items){
-  const lanes=[];
-  for(const i of items){
-    let idx=lanes.findIndex(end=>i.s>end);
-    if(idx<0){ idx=lanes.length; lanes.push(i.e); }
-    else lanes[idx]=i.e;
-    i.lane=idx;
-  }
+/* ================= GANTT RENDER (cards + subtasks) ================= */
+function computeDayWidth(totalDays){
+  const usable = Math.max(320, window.innerWidth - (parseInt(getComputedStyle(document.documentElement).getPropertyValue("--left")) || 320) - 60);
+  const base = Math.floor(usable / Math.max(20, totalDays));
+  return clamp(base, 10, 24);
 }
 
-function render(data){
-  const g=document.getElementById("gantt");
-  if(!data.length){ g.innerHTML=""; return; }
-
+function getViewRange(){
   const v=calendar.view;
-  const start=day(v.currentStart), end=day(v.currentEnd);
-  const days=Math.max(1, diff(start,end));
+  const rangeStart=day(v.currentStart);
+  const rangeEnd=day(v.currentEnd); // exclusive
+  const totalDays=Math.max(1, diffDays(rangeStart, rangeEnd));
+  return { rangeStart, rangeEnd, totalDays };
+}
 
-  const dayW=Math.max(10,Math.min(24, (window.innerWidth-400)/days|0));
-  const weekW=dayW*7;
-  document.documentElement.style.setProperty("--day",dayW+"px");
-  document.documentElement.style.setProperty("--week",weekW+"px");
+function subTasksFromChecklists(cardId, checklists){
+  // Trello checkItems can have `due` (ISO). We only display items with due.
+  // We also exclude completed checkItems to respect "no completed tasks" spirit.
+  const items=[];
+  for(const cl of (checklists||[])){
+    for(const it of (cl.checkItems||[])){
+      if(it.state === "complete") continue;
+      if(!it.due) continue;
+      items.push({
+        id: `${cardId}::${it.id}`,
+        cardId,
+        title: it.name || "(sans nom)",
+        due: it.due,
+        checklistName: cl.name || "",
+      });
+    }
+  }
+  // sort by due
+  items.sort((a,b)=>new Date(a.due)-new Date(b.due));
+  return items;
+}
 
-  const by={};
-  for(const e of data){
-    const s=day(new Date(e.start));
-    const ee=e.end ? day(new Date(e.end)) : s;
-    const si=diff(start,s);
-    const ei=diff(start,new Date(ee.getTime()-86400000));
-    (by[e.list]??=[]).push({...e,s:si,e:ei});
+function renderGantt(cards){
+  const g=document.getElementById("gantt");
+  if(!cards.length){ g.innerHTML=""; return; }
+
+  const { rangeStart, rangeEnd, totalDays } = getViewRange();
+  const dayW = computeDayWidth(totalDays);
+  const weekW = dayW * 7;
+  document.documentElement.style.setProperty("--day", dayW + "px");
+  document.documentElement.style.setProperty("--week", weekW + "px");
+
+  // group by list (still compact)
+  const byList=new Map();
+  for(const c of cards){
+    if(!byList.has(c.list)) byList.set(c.list, []);
+    byList.get(c.list).push(c);
+  }
+  const listOrder=[...byList.keys()].sort((a,b)=>a.localeCompare(b,"fr",{sensitivity:"base"}));
+  for(const k of listOrder){
+    byList.get(k).sort((a,b)=>new Date(a.start)-new Date(b.start));
   }
 
-  let left="", right="";
-  for(const [list,items] of Object.entries(by)){
-    items.sort((a,b)=>a.s-b.s || a.title.localeCompare(b.title,"fr",{sensitivity:"base"}));
-    pack(items);
+  // build rows
+  let leftHtml="";
+  let rightHtml="";
+  const minWidth = totalDays * dayW;
 
-    const maxLane=Math.max(...items.map(i=>i.lane));
-    const height=(maxLane+1)*24+8;
+  // helper to position date -> x
+  function xForDate(iso){
+    const d=day(new Date(iso));
+    const idx=diffDays(rangeStart, d);
+    return clamp(idx, 0, totalDays-1) * dayW;
+  }
 
-    left += `<div class="list" style="height:${height}px">${esc(list)}</div>`;
+  for(const listName of listOrder){
+    // tiny list separator row (minimal, still useful)
+    leftHtml += `<div class="rowL" style="height:22px; cursor:default; background:#fff;">
+      <div class="chev"></div><div class="title" style="font-size:11px; color:var(--muted);">${esc(listName)}</div><div class="due"></div>
+    </div>`;
+    rightHtml += `<div class="rowR" style="height:22px;"></div>`;
 
-    let bars="";
-    for(const i of items){
-      const x=i.s*dayW;
-      const w=(i.e-i.s+1)*dayW;
-      const y=8+i.lane*24;
-      if(i.end){
-        bars += `<div class="bar" data-id="${esc(i.id)}" data-url="${esc(i.url||"")}"
-          style="left:${x}px;top:${y}px;width:${w}px;background:${i.baseColor};color:#fff"
-          title="${esc(i.title)}">${esc(i.title)}</div>`;
-      }else{
-        bars += `<div class="milestone" data-id="${esc(i.id)}" data-url="${esc(i.url||"")}"
-          style="left:${x+dayW/2}px;top:${y+7}px;background:${i.baseColor}"
-          title="${esc(i.title)}"></div>`;
+    for(const c of byList.get(listName)){
+      const expanded = expandedCards.has(c.id);
+      const chev = expanded ? "▾" : "▸";
+      const dueTxt = fmtDue(c.due);
+
+      leftHtml += `
+        <div class="rowL" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}" title="Clic: sous-tâches • Ctrl/Cmd+clic: ouvrir Trello">
+          <div class="chev">${chev}</div>
+          <div class="title">${esc(c.title)}</div>
+          <div class="due">${esc(dueTxt)}</div>
+        </div>
+      `;
+
+      // right row with bar/milestone
+      const hasBar = !!(c.end && c.start);
+      const sx = xForDate(c.start);
+      let ex = sx;
+      let w = dayW;
+
+      if(c.end){
+        const endInc = new Date(day(new Date(c.end)).getTime() - 86400000);
+        const eIdx = diffDays(rangeStart, endInc);
+        ex = clamp(eIdx, 0, totalDays-1) * dayW;
+        w = Math.max(dayW, (ex - sx + dayW));
+      }
+
+      const barEl = c.end
+        ? `<div class="bar" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+              style="left:${sx}px;width:${w}px;background:${c.baseColor};color:#fff;border-color:${c.baseColor};"
+              title="${esc(c.title)}">${esc(c.title)}</div>`
+        : `<div class="milestone" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+              style="left:${sx + (dayW/2)}px;background:${c.baseColor};"
+              title="${esc(c.title)}"></div>`;
+
+      rightHtml += `<div class="rowR">${barEl}</div>`;
+
+      // subtasks rows
+      if(expanded){
+        const cached = checklistCache.get(c.id);
+        const subtasks = cached?.loaded ? subTasksFromChecklists(c.id, cached.checklists) : [];
+
+        if(!cached || !cached.loaded){
+          // placeholder one row while loading (keeps compact)
+          leftHtml += `<div class="subL" data-kind="sub" data-card="${esc(c.id)}"><span class="dot" style="background:#cbd5e1"></span><div class="stitle">…</div><div class="sdue"></div></div>`;
+          rightHtml += `<div class="subR"></div>`;
+        } else if(subtasks.length === 0){
+          leftHtml += `<div class="subL" data-kind="sub" data-card="${esc(c.id)}"><span class="dot" style="background:#cbd5e1"></span><div class="stitle">(aucune sous-tâche datée)</div><div class="sdue"></div></div>`;
+          rightHtml += `<div class="subR"></div>`;
+        } else {
+          for(const st of subtasks){
+            const dx = xForDate(st.due);
+            const dueLabel = fmtDue(st.due);
+
+            leftHtml += `
+              <div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}" title="${esc(st.checklistName)}">
+                <span class="dot" style="background:${c.baseColor}"></span>
+                <div class="stitle">${esc(st.title)}</div>
+                <div class="sdue">${esc(dueLabel)}</div>
+              </div>
+            `;
+            rightHtml += `
+              <div class="subR">
+                <div class="milestone" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}"
+                  style="left:${dx + (dayW/2)}px;background:${c.baseColor};"
+                  title="${esc(st.title)}"></div>
+              </div>
+            `;
+          }
+        }
       }
     }
-
-    right += `<div class="lane" style="height:${height}px"><div class="inner">${bars}</div></div>`;
   }
 
   g.innerHTML = `
@@ -555,22 +710,23 @@ function render(data){
         <div class="hl"></div>
         <div class="hr">
           <div class="ticks">
-            ${Array.from({length:days/7|0}).map((_,i)=>`<div class="tick">S${i+1}</div>`).join("")}
+            ${Array.from({length:Math.max(1,(totalDays/7|0))}).map((_,i)=>`<div class="tick">S${i+1}</div>`).join("")}
           </div>
         </div>
       </div>
-      <div class="scroll" id="ganttScroll">
-        <div class="left" id="ganttLeft">${left}</div>
-        <div class="right" id="ganttRight">
-          <div style="position:relative;min-width:${days*dayW}px">${right}</div>
+
+      <div class="scroll">
+        <div class="left" id="gLeft">${leftHtml}</div>
+        <div class="right" id="gRight">
+          <div style="position:relative;min-width:${minWidth}px">${rightHtml}</div>
         </div>
       </div>
     </div>
   `;
 
-  // sync vertical scroll left/right
-  const L=document.getElementById("ganttLeft");
-  const R=document.getElementById("ganttRight");
+  // sync vertical scroll
+  const L=document.getElementById("gLeft");
+  const R=document.getElementById("gRight");
   let syncing=false;
   const sync = (from, to) => () => {
     if(syncing) return;
@@ -581,39 +737,89 @@ function render(data){
   L.addEventListener("scroll", sync(L,R), {passive:true});
   R.addEventListener("scroll", sync(R,L), {passive:true});
 
-  // interactions: click open / hover tooltip checklists
   bindGanttInteractions();
 }
 
+/* ================= INTERACTIONS ================= */
 function bindGanttInteractions(){
   const root=document.getElementById("gantt");
   root.onmousemove = (e)=>moveTT(e);
 
-  root.onclick = (e)=>{
-    const el = e.target.closest("[data-url]");
+  root.onclick = async (e)=>{
+    const el = e.target.closest("[data-kind]");
     if(!el) return;
-    const url=el.getAttribute("data-url");
-    if(url) window.open(url,"_blank","noopener,noreferrer");
+
+    const kind = el.getAttribute("data-kind");
+    const cardId = el.getAttribute("data-card");
+
+    // Ctrl/Cmd click => open Trello
+    const isOpenShortcut = e.ctrlKey || e.metaKey;
+    const url = el.getAttribute("data-url");
+
+    if(isOpenShortcut && url){
+      window.open(url,"_blank","noopener,noreferrer");
+      return;
+    }
+
+    // Click on card toggles expand/collapse (not open)
+    if(kind === "card" && cardId){
+      if(expandedCards.has(cardId)) expandedCards.delete(cardId);
+      else expandedCards.add(cardId);
+      persistExpanded();
+
+      // if expanding, lazy-load checklists then re-render
+      if(expandedCards.has(cardId)){
+        if(!checklistCache.has(cardId)) checklistCache.set(cardId,{loaded:false,checklists:[]});
+        const cached = checklistCache.get(cardId);
+        if(!cached.loaded){
+          try{
+            cached.checklists = await fetchCardChecklists(cardId);
+            cached.loaded = true;
+          }catch{
+            cached.checklists = [];
+            cached.loaded = true;
+          }
+        }
+      }
+
+      renderGantt(filteredCards);
+      return;
+    }
   };
 
+  // Tooltip hover: show card checklists on card bars; show subtask info on sub milestones
   root.onmouseover = async (e)=>{
-    const el = e.target.closest("[data-id]");
+    const el = e.target.closest("[data-kind]");
     if(!el) return;
-    const cardId = el.getAttribute("data-id");
+
+    const kind = el.getAttribute("data-kind");
+    const cardId = el.getAttribute("data-card");
     if(!cardId || !token()) return;
 
-    const ev = calendar.getEventById(cardId);
-    const title = ev?.title || "";
-    const listName = ev?.extendedProps?.listName || "";
-
     const tt=ensureTT();
-    tt.innerHTML = `<h4>${esc(title)}</h4><div class="meta">${esc(listName)}</div><div class="meta">…</div>`;
     tt.style.display="block";
     moveTT(e);
 
+    // find card data
+    const card = allCards.find(c=>c.id===cardId);
+    const title = card?.title || "";
+    const listName = card?.list || "";
+
+    if(kind === "sub"){
+      // Subtask: show its title + due
+      const subId = el.getAttribute("data-sub") || "";
+      const cached = checklistCache.get(cardId);
+      const subtasks = cached?.loaded ? subTasksFromChecklists(cardId, cached.checklists) : [];
+      const st = subtasks.find(x=>x.id===subId);
+      tt.innerHTML = `<h4>${esc(st?.title || title)}</h4><div class="meta">${esc(fmtDue(st?.due || ""))}</div><div class="meta">${esc(st?.checklistName || "")}</div>`;
+      return;
+    }
+
+    // Card hover: show checklists (lazy+cache)
+    tt.innerHTML = `<h4>${esc(title)}</h4><div class="meta">${esc(listName)}</div><div class="meta">Chargement…</div>`;
     try{
       if(!checklistCache.has(cardId)) checklistCache.set(cardId,{loaded:false,checklists:[]});
-      const cached=checklistCache.get(cardId);
+      const cached = checklistCache.get(cardId);
       if(!cached.loaded){
         cached.checklists = await fetchCardChecklists(cardId);
         cached.loaded = true;
@@ -627,7 +833,7 @@ function bindGanttInteractions(){
   root.onmouseleave = ()=>hideTT();
 }
 
-/* ========== INIT ========== */
+/* ================= INIT ================= */
 document.addEventListener("DOMContentLoaded",()=>{
   calendar=new FullCalendar.Calendar(document.getElementById("calendar"),{
     locale:"fr",
@@ -642,7 +848,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   });
   calendar.render();
 
-  // zoom
+  // zoom buttons
   document.getElementById("z1").onclick=()=>calendar.changeView("multiMonth1");
   document.getElementById("z3").onclick=()=>calendar.changeView("multiMonthQuarter");
   document.getElementById("z6").onclick=()=>calendar.changeView("multiMonth6");
@@ -655,7 +861,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
   // token actions
   document.getElementById("refresh").onclick=()=>load();
-  document.getElementById("logout").onclick=()=>{localStorage.removeItem("trello_token"); load();};
+  document.getElementById("logout").onclick=()=>{localStorage.removeItem("trello_token"); renderGantt([]);};
   document.getElementById("saveToken").onclick=()=>{
     localStorage.setItem("trello_token", (document.getElementById("tokenInput").value||"").trim());
     document.getElementById("tokenInput").value="";
@@ -667,7 +873,6 @@ document.addEventListener("DOMContentLoaded",()=>{
   const dd=document.getElementById("tagsDropdown");
   btn.addEventListener("click", (e)=>{ e.stopPropagation(); toggleTags(); });
   dd.addEventListener("click", (e)=>e.stopPropagation());
-
   document.getElementById("tagsSearch").addEventListener("input", ()=>renderTagsDropdown());
   document.getElementById("tagsAll").addEventListener("click", ()=>{
     selectedTags = new Set(allTags.map(t=>t.name));
@@ -681,16 +886,19 @@ document.addEventListener("DOMContentLoaded",()=>{
     renderTagsDropdown();
     applyFilters();
   });
-
   document.addEventListener("click", ()=>closeTags());
   document.addEventListener("keydown", (e)=>{ if(e.key==="Escape") closeTags(); });
 
   // responsive
-  window.addEventListener("resize", ()=>{ clearTimeout(window.__rT); window.__rT=setTimeout(applyFilters, 120); });
+  window.addEventListener("resize", ()=>{ clearTimeout(window.__rT); window.__rT=setTimeout(()=>renderGantt(filteredCards), 120); });
+
+  // restore persisted
+  restoreExpanded();
+  restoreSelectedTags();
+  setTagsBtnLabel();
 
   load();
 });
 </script>
-
 </body>
 </html>
