@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Trello → Calendrier</title>
+  <title>Trello → Gantt</title>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.css">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
@@ -15,152 +15,114 @@
       --text: #0f172a;
       --muted: #64748b;
       --border: #e5e7eb;
-      --shadow: 0 20px 50px rgba(2,6,23,.08);
-      --shadow-sm: 0 8px 20px rgba(2,6,23,.08);
+      --shadow: 0 18px 45px rgba(2,6,23,.08);
+      --shadow-sm: 0 8px 18px rgba(2,6,23,.08);
       --radius: 18px;
 
-      --gantt-row-h: 34px;
-      --gantt-bar-h: 18px;
-      --gantt-grid: rgba(15,23,42,.06);
-      --gantt-grid-strong: rgba(15,23,42,.10);
+      /* Gantt sizing (compact always) */
+      --gantt-left-w: 260px;
+      --gantt-lane-h: 20px;
+      --gantt-lane-gap: 6px;
+      --gantt-pad-y: 10px;
+      --gantt-bar-h: 16px;
+
+      --grid: rgba(15,23,42,.06);
+      --grid-strong: rgba(15,23,42,.10);
     }
 
     *{ box-sizing: border-box; }
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: radial-gradient(1200px 600px at 10% 0%, rgba(99,102,241,.10), transparent 55%),
-                  radial-gradient(900px 500px at 90% 10%, rgba(14,165,233,.10), transparent 55%),
-                  var(--bg);
+      background:
+        radial-gradient(1200px 600px at 10% 0%, rgba(99,102,241,.10), transparent 55%),
+        radial-gradient(900px 500px at 90% 10%, rgba(14,165,233,.10), transparent 55%),
+        var(--bg);
       color: var(--text);
     }
 
-    /* Top app bar */
-    .appbar{
-      position: sticky; top:0; z-index:50;
-      backdrop-filter: blur(10px);
-      background: rgba(246,247,251,.75);
-      border-bottom: 1px solid rgba(229,231,235,.9);
-    }
-    .appbar-inner{
+    .container{
       max-width: 1280px;
       margin: 0 auto;
-      padding: 14px 16px;
+      padding: 0 14px;
+    }
+
+    /* Sticky top bar */
+    .topbar{
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+      background: rgba(246,247,251,.76);
+      border-bottom: 1px solid rgba(229,231,235,.9);
+    }
+    .topbar-inner{
+      padding: 12px 0 10px;
+      display:flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .toprow{
       display:flex;
       align-items:center;
       justify-content: space-between;
-      gap: 14px;
+      gap: 10px;
       flex-wrap: wrap;
     }
     .brand{
-      display:flex; align-items:center; gap: 10px;
-      font-weight: 800; letter-spacing: .2px;
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-weight: 900;
+      letter-spacing: .2px;
     }
     .dot{
-      width: 12px; height: 12px; border-radius: 999px;
+      width: 11px; height: 11px; border-radius: 999px;
       background: linear-gradient(135deg, #6366f1, #0ea5e9);
-      box-shadow: 0 10px 30px rgba(99,102,241,.35);
+      box-shadow: 0 10px 26px rgba(99,102,241,.30);
     }
     .sub{
-      font-weight: 600; color: var(--muted); font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+      font-size: 12px;
     }
 
-    /* Controls */
     .controls{
-      display:flex; align-items:center; gap: 10px;
+      display:flex;
+      align-items:center;
+      gap: 10px;
       flex-wrap: wrap;
     }
+
     .chip{
-      display:inline-flex; align-items:center; gap:8px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
       border: 1px solid var(--border);
-      background: rgba(255,255,255,.85);
-      padding: 9px 10px;
+      background: rgba(255,255,255,.90);
+      padding: 8px 10px;
       border-radius: 999px;
       box-shadow: var(--shadow-sm);
     }
-    .chip strong{ font-size: 12px; color: var(--muted); font-weight: 700; }
-    .select{
+    .chip strong{
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 900;
+      letter-spacing: .02em;
+    }
+    .select, .chip input{
       border: 0;
       outline: none;
       background: transparent;
-      font-weight: 700;
-      color: var(--text);
-      max-width: 240px;
-    }
-
-    .btn{
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.9);
-      padding: 10px 12px;
-      border-radius: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: var(--shadow-sm);
-      transition: transform .08s ease, box-shadow .08s ease, background .08s ease;
-      user-select: none;
-    }
-    .btn:hover{ transform: translateY(-1px); box-shadow: 0 14px 30px rgba(2,6,23,.10); }
-    .btn:active{ transform: translateY(0); box-shadow: var(--shadow-sm); }
-    .btn.primary{
-      border: 1px solid rgba(99,102,241,.35);
-      background: linear-gradient(135deg, rgba(99,102,241,.14), rgba(14,165,233,.12));
-    }
-
-    .tokenbar{
-      display:flex; align-items:center; gap:8px;
-      border: 1px dashed rgba(100,116,139,.35);
-      background: rgba(255,255,255,.65);
-      padding: 9px 10px;
-      border-radius: 14px;
-    }
-    .tokenbar input{
-      border: 0; outline:none; background: transparent;
-      min-width: 220px;
-      font-weight: 700;
-    }
-
-    .status{
-      max-width: 1280px;
-      margin: 10px auto 0;
-      padding: 0 16px 10px;
-      display:flex; gap: 10px; flex-wrap: wrap;
-      align-items:center;
-      color: var(--muted);
-      font-weight: 600;
-      font-size: 13px;
-    }
-    .error{ color: #b91c1c; }
-
-    /* Layout */
-    .wrap{
-      max-width: 1280px;
-      margin: 14px auto 40px;
-      padding: 0 16px;
-    }
-    .panel{
-      background: var(--card);
-      border: 1px solid rgba(229,231,235,.9);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-    .panel-head{
-      padding: 14px 16px;
-      border-bottom: 1px solid rgba(229,231,235,.9);
-      display:flex;
-      justify-content: space-between;
-      align-items:center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .panel-head .title{
       font-weight: 900;
-      letter-spacing: .2px;
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      flex-wrap: wrap;
+      color: var(--text);
+      max-width: 220px;
     }
+    .chip input{ width: 190px; }
+    @media (max-width: 520px){
+      .chip input{ width: 140px; }
+    }
+
     .seg{
       display:inline-flex;
       border: 1px solid rgba(229,231,235,.95);
@@ -172,80 +134,104 @@
     .seg button{
       border:0;
       background: transparent;
-      padding: 9px 11px;
+      padding: 8px 10px;
       font-weight: 900;
       color: var(--muted);
       cursor: pointer;
-      user-select: none;
+      user-select:none;
     }
     .seg button.active{
       color: var(--text);
       background: rgba(255,255,255,.92);
     }
 
-    .toggle{
-      display:flex; align-items:center; gap: 8px;
-      color: var(--muted); font-weight: 700; font-size: 13px;
-      user-select: none;
-    }
-    .toggle input{ transform: translateY(1px); }
-
-    #calendar{
-      padding: 10px 10px 0;
-    }
-
-    /* FullCalendar modern tweaks */
-    .fc .fc-toolbar-title{
-      font-size: 18px;
+    .btn{
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.92);
+      padding: 9px 11px;
+      border-radius: 12px;
       font-weight: 900;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: transform .08s ease, box-shadow .08s ease;
+      user-select:none;
+      white-space: nowrap;
+    }
+    .btn:hover{ transform: translateY(-1px); box-shadow: 0 14px 26px rgba(2,6,23,.10); }
+    .btn:active{ transform: translateY(0); box-shadow: var(--shadow-sm); }
+    .btn.primary{
+      border: 1px solid rgba(99,102,241,.35);
+      background: linear-gradient(135deg, rgba(99,102,241,.14), rgba(14,165,233,.12));
+    }
+
+    .tokenbar{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      border: 1px dashed rgba(100,116,139,.35);
+      background: rgba(255,255,255,.68);
+      padding: 8px 10px;
+      border-radius: 14px;
+    }
+    .tokenbar input{
+      border:0; outline:none; background: transparent;
+      min-width: 200px;
+      font-weight: 900;
+    }
+    @media (max-width: 720px){
+      .tokenbar input{ min-width: 140px; }
+    }
+
+    .status{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 13px;
+      padding-bottom: 2px;
+    }
+    .error{ color: #b91c1c; }
+
+    /* Main panel centered */
+    .wrap{
+      padding: 14px 0 40px;
+    }
+    .panel{
+      background: var(--card);
+      border: 1px solid rgba(229,231,235,.9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    /* FullCalendar used as navigation (toolbar only) */
+    #calendar{
+      padding: 8px 10px 0;
+      border-bottom: 1px solid rgba(229,231,235,.9);
+      background: rgba(255,255,255,.9);
+    }
+    .fc .fc-toolbar{
+      margin: 4px 0 10px !important;
+    }
+    .fc .fc-toolbar-title{
+      font-size: 16px;
+      font-weight: 950;
       letter-spacing: .2px;
     }
     .fc .fc-button{
       border-radius: 12px !important;
       border: 1px solid var(--border) !important;
-      background: rgba(255,255,255,.9) !important;
+      background: rgba(255,255,255,.92) !important;
       color: var(--text) !important;
-      font-weight: 800 !important;
+      font-weight: 900 !important;
       box-shadow: var(--shadow-sm);
       transition: transform .08s ease, box-shadow .08s ease;
+      padding: 8px 10px !important;
     }
-    .fc .fc-button:hover{ transform: translateY(-1px); box-shadow: 0 14px 30px rgba(2,6,23,.10); }
-    .fc .fc-button.fc-button-active{
-      border-color: rgba(99,102,241,.35) !important;
-      background: linear-gradient(135deg, rgba(99,102,241,.14), rgba(14,165,233,.12)) !important;
-    }
-    .fc .fc-scrollgrid, .fc .fc-scrollgrid table{
-      border-color: rgba(229,231,235,.9) !important;
-    }
-    .fc .fc-daygrid-day-number{
-      color: var(--muted);
-      font-weight: 800;
-      font-size: 12px;
-    }
-    .fc .fc-col-header-cell-cushion{
-      color: var(--muted);
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      font-size: 11px;
-    }
-
-    /* Events => pill */
-    .fc .fc-event{
-      border-radius: 999px !important;
-      border-width: 1px !important;
-      padding: 2px 8px !important;
-      box-shadow: 0 10px 24px rgba(2,6,23,.10);
-      overflow: hidden;
-    }
-    .fc .fc-event:hover{
-      filter: brightness(1.03);
-      box-shadow: 0 14px 32px rgba(2,6,23,.14);
-    }
-    .compact .fc .fc-event{
-      padding: 1px 7px !important;
-      font-size: 11px;
-    }
+    .fc .fc-button:hover{ transform: translateY(-1px); box-shadow: 0 14px 26px rgba(2,6,23,.10); }
+    .fc .fc-view-harness{ display:none; } /* IMPORTANT: hide grid, keep toolbar */
 
     /* Tooltip */
     .tt{
@@ -260,22 +246,17 @@
       line-height: 1.35;
       pointer-events: none;
     }
-    .tt h4{ margin:0 0 6px 0; font-size: 13px; font-weight: 900; }
-    .tt .meta{ color: var(--muted); margin-bottom: 10px; font-weight: 700; }
+    .tt h4{ margin:0 0 6px 0; font-size: 13px; font-weight: 950; }
+    .tt .meta{ color: var(--muted); margin-bottom: 10px; font-weight: 900; }
     .tt .sec{ margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(229,231,235,.9); }
     .tt ul{ margin: 0; padding-left: 18px; }
     .tt li{ margin: 2px 0; }
     .tt .done{ text-decoration: line-through; color: var(--muted); }
 
-    /* ===== GANTT ===== */
+    /* ===== GANTT CORE ===== */
     #gantt{
-      padding: 10px 10px 14px;
-      display:none;
+      padding: 10px;
     }
-    .ganttmode #gantt{ display:block; }
-    .ganttmode #calendar .fc-view-harness{ display:none; } /* garde toolbar FullCalendar */
-
-    .ganttmode #ganttOptions{ display:inline-flex !important; }
 
     .gantt-shell{
       border: 1px solid rgba(229,231,235,.95);
@@ -289,93 +270,57 @@
       padding: 10px 12px;
       border-bottom: 1px solid rgba(229,231,235,.95);
       display:flex;
-      align-items:center;
+      align-items:flex-start;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
     }
     .gantt-top .range{
-      font-weight: 900;
+      font-weight: 950;
       letter-spacing: .2px;
     }
     .gantt-top .hint{
       color: var(--muted);
-      font-weight: 700;
+      font-weight: 900;
       font-size: 12px;
-    }
-
-    .gantt-grid{
-      position: relative;
-      display:grid;
-      grid-template-columns: minmax(220px, 360px) 1fr;
-      min-height: 60px;
-    }
-    .compact .gantt-grid{ grid-template-columns: minmax(200px, 320px) 1fr; }
-
-    .gantt-left{
-      border-right: 1px solid rgba(229,231,235,.95);
-      background: linear-gradient(180deg, rgba(246,247,251,.65), rgba(255,255,255,.9));
-    }
-    .gantt-right{
-      position: relative;
-      background:
-        repeating-linear-gradient(
-          to right,
-          var(--gantt-grid) 0px,
-          var(--gantt-grid) 1px,
-          transparent 1px,
-          transparent var(--gantt-day-w, 26px)
-        );
-    }
-    .gantt-right::before{
-      content:"";
-      position:absolute; inset:0;
-      background:
-        repeating-linear-gradient(
-          to right,
-          transparent 0,
-          transparent calc(var(--gantt-week-w, 182px) - 1px),
-          var(--gantt-grid-strong) calc(var(--gantt-week-w, 182px) - 1px),
-          var(--gantt-grid-strong) var(--gantt-week-w, 182px)
-        );
-      pointer-events:none;
-      opacity:.8;
     }
 
     .gantt-head{
       display:grid;
-      grid-template-columns: minmax(220px, 360px) 1fr;
+      grid-template-columns: var(--gantt-left-w) 1fr;
       border-bottom: 1px solid rgba(229,231,235,.95);
       background: rgba(255,255,255,.92);
     }
     .gantt-head .hl{
       padding: 10px 12px;
-      font-weight: 900;
+      font-weight: 950;
       color: var(--muted);
-      font-size: 12px;
-      letter-spacing: .08em;
+      font-size: 11px;
+      letter-spacing: .10em;
       text-transform: uppercase;
       border-right: 1px solid rgba(229,231,235,.95);
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 8px;
     }
     .gantt-head .hr{
       position: relative;
       padding: 10px 12px;
       overflow:hidden;
     }
+
     .ticks{
       display:flex;
-      gap: 0;
       align-items:center;
       height: 18px;
-      position: relative;
     }
     .tick{
       width: var(--gantt-week-w, 182px);
       min-width: var(--gantt-week-w, 182px);
       color: var(--muted);
-      font-weight: 900;
+      font-weight: 950;
       font-size: 11px;
-      letter-spacing: .02em;
       text-transform: uppercase;
       opacity:.9;
       white-space: nowrap;
@@ -384,137 +329,44 @@
       padding-right: 8px;
     }
 
-    .gantt-rows{
-      display:block;
-      max-height: min(68vh, 900px);
+    /* Scroll area */
+    .gantt-scroll{
+      display:grid;
+      grid-template-columns: var(--gantt-left-w) 1fr;
+      max-height: min(72vh, 980px);
+      overflow: hidden;
+    }
+
+    .gantt-left{
+      border-right: 1px solid rgba(229,231,235,.95);
+      background: linear-gradient(180deg, rgba(246,247,251,.65), rgba(255,255,255,.92));
+      overflow:auto;
+    }
+    .gantt-rightWrap{
       overflow:auto;
       position: relative;
+      background:
+        repeating-linear-gradient(
+          to right,
+          var(--grid) 0px,
+          var(--grid) 1px,
+          transparent 1px,
+          transparent var(--gantt-day-w, 22px)
+        );
     }
-
-    /* Swimlanes (group by list) */
-    .group-head{
-      display:grid;
-      grid-template-columns: minmax(220px, 360px) 1fr;
-      background: rgba(246,247,251,.75);
-      border-top: 1px solid rgba(229,231,235,.95);
-      border-bottom: 1px solid rgba(229,231,235,.75);
-      position: sticky;
-      top: 0;
-      z-index: 2;
-    }
-    .group-head .ghl{
-      padding: 10px 12px;
-      border-right: 1px solid rgba(229,231,235,.75);
-      display:flex; align-items:center; gap: 10px;
-      min-width:0;
-    }
-    .group-pill{
-      display:inline-flex; align-items:center; gap:8px;
-      border: 1px solid rgba(229,231,235,.95);
-      background: rgba(255,255,255,.9);
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-weight: 900;
-      font-size: 12px;
-      color: var(--text);
-      cursor: pointer;
-      user-select:none;
-    }
-    .group-pill span{
-      color: var(--muted);
-      font-weight: 900;
-      font-size: 11px;
-    }
-    .group-head .ghr{ position: relative; }
-
-    .gantt-row{
-      display:grid;
-      grid-template-columns: minmax(220px, 360px) 1fr;
-      border-bottom: 1px solid rgba(229,231,235,.75);
-      min-height: var(--gantt-row-h);
-    }
-    .compact{
-      --gantt-row-h: 28px;
-      --gantt-bar-h: 16px;
-    }
-
-    .gantt-row .lcell{
-      padding: 8px 12px;
-      border-right: 1px solid rgba(229,231,235,.75);
-      display:flex;
-      align-items:center;
-      gap: 8px;
-      min-width: 0;
-    }
-    .lcell .name{
-      font-weight: 900;
-      font-size: 12px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .lcell .meta{
-      font-weight: 800;
-      font-size: 11px;
-      color: var(--muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .lcell .stack{
-      display:flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width:0;
-    }
-
-    .gantt-row .rcell{
-      position: relative;
-      padding: 0;
-    }
-
-    .bar{
-      position:absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      height: var(--gantt-bar-h);
-      border-radius: 10px;
-      border: 1px solid rgba(15,23,42,.10);
-      box-shadow: 0 10px 20px rgba(2,6,23,.10);
-      display:flex;
-      align-items:center;
-      padding: 0 8px;
-      gap: 8px;
-      cursor: pointer;
-      min-width: 10px;
-      overflow:hidden;
-    }
-    .bar:hover{
-      filter: brightness(1.03);
-      box-shadow: 0 14px 28px rgba(2,6,23,.14);
-    }
-    .bar .t{
-      font-weight: 900;
-      font-size: 12px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .milestone{
-      position:absolute;
-      top: 50%;
-      transform: translate(-50%, -50%) rotate(45deg);
-      width: 12px;
-      height: 12px;
-      border-radius: 3px;
-      border: 1px solid rgba(15,23,42,.10);
-      box-shadow: 0 10px 20px rgba(2,6,23,.10);
-      cursor:pointer;
-    }
-    .milestone:hover{
-      filter: brightness(1.05);
-      box-shadow: 0 14px 28px rgba(2,6,23,.14);
+    .gantt-rightWrap::before{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        repeating-linear-gradient(
+          to right,
+          transparent 0,
+          transparent calc(var(--gantt-week-w, 154px) - 1px),
+          var(--grid-strong) calc(var(--gantt-week-w, 154px) - 1px),
+          var(--grid-strong) var(--gantt-week-w, 154px)
+        );
+      pointer-events:none;
+      opacity:.85;
     }
 
     .todayLine{
@@ -524,69 +376,164 @@
       background: rgba(239,68,68,.75);
       box-shadow: 0 0 0 3px rgba(239,68,68,.10);
       pointer-events:none;
+      z-index: 2;
+    }
+
+    /* List rows (left) + lanes canvas (right) stay aligned by shared heights */
+    .listRow{
+      border-bottom: 1px solid rgba(229,231,235,.75);
+      padding: 10px 12px;
+      display:flex;
+      align-items:flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      user-select:none;
+    }
+    .listRow:hover{ background: rgba(255,255,255,.55); }
+    .listName{
+      font-weight: 950;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    .listMeta{
+      font-weight: 950;
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .laneBlock{
+      position: relative;
+      border-bottom: 1px solid rgba(229,231,235,.75);
+      min-height: 44px;
+    }
+    .laneInner{
+      position:absolute;
+      inset:0;
+      padding: var(--gantt-pad-y) 0;
+      z-index: 1;
+    }
+
+    /* Bars */
+    .bar{
+      position:absolute;
+      height: var(--gantt-bar-h);
+      border-radius: 10px;
+      border: 1px solid rgba(15,23,42,.10);
+      box-shadow: 0 10px 18px rgba(2,6,23,.10);
+      display:flex;
+      align-items:center;
+      padding: 0 8px;
+      gap: 8px;
+      cursor: pointer;
+      overflow:hidden;
+      min-width: 12px;
+      z-index: 3;
+    }
+    .bar:hover{
+      filter: brightness(1.03);
+      box-shadow: 0 14px 26px rgba(2,6,23,.14);
+    }
+    .bar .t{
+      font-weight: 950;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .milestone{
+      position:absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      border: 1px solid rgba(15,23,42,.10);
+      box-shadow: 0 10px 18px rgba(2,6,23,.10);
+      transform: translate(-50%, -50%) rotate(45deg);
+      cursor:pointer;
+      z-index: 3;
+    }
+    .milestone:hover{
+      filter: brightness(1.05);
+      box-shadow: 0 14px 26px rgba(2,6,23,.14);
+    }
+
+    /* Responsive tweaks */
+    @media (max-width: 860px){
+      :root{ --gantt-left-w: 220px; }
+      .tokenbar input{ min-width: 130px; }
+    }
+    @media (max-width: 620px){
+      :root{ --gantt-left-w: 170px; }
+      .listMeta{ display:none; }
+      .gantt-top{ padding: 10px; }
+      .gantt-head .hl{ padding: 10px; }
+      .gantt-head .hr{ padding: 10px; }
     }
   </style>
 </head>
 
 <body>
-  <div class="appbar">
-    <div class="appbar-inner">
-      <div>
-        <div class="brand"><span class="dot"></span> Trello Calendar <span class="sub">Trimestre • style planning</span></div>
+  <div class="topbar">
+    <div class="container">
+      <div class="topbar-inner">
+        <div class="toprow">
+          <div class="brand">
+            <span class="dot"></span>
+            Trello Gantt
+            <span class="sub">ultra-compact • listes → lanes</span>
+          </div>
+
+          <div class="controls">
+            <div class="chip">
+              <strong>Tag</strong>
+              <select id="labelFilter" class="select">
+                <option value="__ALL__">Tous</option>
+              </select>
+            </div>
+
+            <div class="chip" title="Filtrer par texte (titre / liste)">
+              <strong>Recherche</strong>
+              <input id="searchInput" class="select" placeholder="ex: onboarding…" />
+            </div>
+
+            <div class="seg" aria-label="Zoom Gantt (durée)">
+              <button id="zoom1" type="button">1M</button>
+              <button id="zoom3" type="button" class="active">3M</button>
+              <button id="zoom6" type="button">6M</button>
+            </div>
+
+            <button class="btn" id="refreshBtn">Rafraîchir</button>
+            <button class="btn" id="logoutBtn" title="Oublier le token">Oublier</button>
+
+            <div class="tokenbar">
+              <input id="tokenInput" type="password" placeholder="Trello token" />
+              <button class="btn primary" id="saveTokenBtn">Valider</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="status">
+          <span id="status"></span>
+          <span id="error" class="error"></span>
+        </div>
       </div>
-
-      <div class="controls">
-        <div class="chip">
-          <strong>Tag</strong>
-          <select id="labelFilter" class="select">
-            <option value="__ALL__">Tous</option>
-          </select>
-        </div>
-
-        <div class="chip" title="Filtrer par texte (nom / liste)">
-          <strong>Recherche</strong>
-          <input id="searchInput" class="select" style="max-width:220px" placeholder="ex: onboarding…" />
-        </div>
-
-        <button class="btn" id="refreshBtn">Rafraîchir</button>
-        <button class="btn" id="logoutBtn" title="Oublier le token">Oublier</button>
-
-        <div class="tokenbar">
-          <input id="tokenInput" type="password" placeholder="Trello token" />
-          <button class="btn primary" id="saveTokenBtn">Valider</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="status">
-      <span id="status"></span>
-      <span id="error" class="error"></span>
     </div>
   </div>
 
   <div class="wrap">
-    <div class="panel">
-      <div class="panel-head">
-        <div class="title">
-          <span>Vue trimestre</span>
-          <div class="seg" role="tablist" aria-label="Mode d'affichage">
-            <button id="modeCalendarBtn" class="active" type="button">Calendrier</button>
-            <button id="modeGanttBtn" type="button">Gantt</button>
-          </div>
+    <div class="container">
+      <div class="panel">
+        <!-- FullCalendar: toolbar only (center of app navigation) -->
+        <div id="calendar"></div>
 
-          <div id="ganttOptions" class="seg" style="display:none" aria-label="Options Gantt">
-            <button id="ganttGroupBtn" type="button" title="Regrouper par liste">Par liste</button>
-            <button id="ganttZoom1Btn" type="button" title="Zoom 1 mois">1M</button>
-            <button id="ganttZoom3Btn" type="button" class="active" title="Zoom 3 mois">3M</button>
-            <button id="ganttZoom6Btn" type="button" title="Zoom 6 mois">6M</button>
-          </div>
-        </div>
-
-        <label class="toggle"><input type="checkbox" id="compactToggle" /> Mode compact</label>
+        <!-- Gantt -->
+        <div id="gantt"></div>
       </div>
-
-      <div id="calendar"></div>
-      <div id="gantt"></div>
     </div>
   </div>
 
@@ -622,19 +569,30 @@
     const checklistCache = new Map();
     let tooltipEl = null;
 
-    const VIEW_MODE_KEY = "tc_view_mode";
-    function getViewMode(){ return localStorage.getItem(VIEW_MODE_KEY) || "calendar"; }
-    function setViewMode(mode){ localStorage.setItem(VIEW_MODE_KEY, mode); }
-
     const SEARCH_KEY = "tc_search";
-    const GROUP_KEY = "tc_gantt_group";
-    const COLLAPSE_KEY = "tc_gantt_collapsed";
-    const ZOOM_KEY = "tc_gantt_zoom"; // "1" | "3" | "6"
+    const ZOOM_KEY = "tc_zoom"; // "1"|"3"|"6"
+    const COLLAPSE_KEY = "tc_collapsed_lists"; // ["List name", ...]
+
+    function setStatus(msg){ document.getElementById("status").textContent = msg || ""; }
+    function setError(msg){ document.getElementById("error").textContent = msg || ""; }
+
+    function getToken(){ return localStorage.getItem("trello_token"); }
+    function saveToken(token){ localStorage.setItem("trello_token", token); }
+    function forgetToken(){
+      localStorage.removeItem("trello_token");
+      document.getElementById("tokenInput").value = "";
+      calendar?.removeAllEvents();
+      setError("");
+      setStatus("Token supprimé sur ce navigateur.");
+      renderGantt(true);
+    }
 
     function getSearch(){ return localStorage.getItem(SEARCH_KEY) || ""; }
     function setSearch(v){ localStorage.setItem(SEARCH_KEY, v || ""); }
-    function getGroupByList(){ return (localStorage.getItem(GROUP_KEY) || "1") === "1"; }
-    function setGroupByList(v){ localStorage.setItem(GROUP_KEY, v ? "1" : "0"); }
+
+    function getZoom(){ return localStorage.getItem(ZOOM_KEY) || "3"; }
+    function setZoom(z){ localStorage.setItem(ZOOM_KEY, z); }
+
     function getCollapsed(){
       try { return new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) || "[]")); }
       catch { return new Set(); }
@@ -642,26 +600,10 @@
     function setCollapsed(set){
       localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...set]));
     }
-    function getZoom(){ return localStorage.getItem(ZOOM_KEY) || "3"; }
-    function setZoom(z){ localStorage.setItem(ZOOM_KEY, z); }
 
-    function setStatus(msg) { document.getElementById("status").textContent = msg || ""; }
-    function setError(msg) { document.getElementById("error").textContent = msg || ""; }
+    function qs(params){ return new URLSearchParams(params).toString(); }
 
-    function getToken() { return localStorage.getItem("trello_token"); }
-    function saveToken(token) { localStorage.setItem("trello_token", token); }
-    function forgetToken() {
-      localStorage.removeItem("trello_token");
-      document.getElementById("tokenInput").value = "";
-      calendar?.removeAllEvents();
-      setError("");
-      setStatus("Token supprimé sur ce navigateur.");
-      renderGanttIfNeeded(true);
-    }
-
-    function qs(params) { return new URLSearchParams(params).toString(); }
-
-    function uniqBy(arr, keyFn) {
+    function uniqBy(arr, keyFn){
       const seen = new Set();
       return arr.filter(x => {
         const k = keyFn(x);
@@ -671,7 +613,7 @@
       });
     }
 
-    async function fetchBoardLists(token) {
+    async function fetchBoardLists(token){
       const url = `${API_BASE}/boards/${encodeURIComponent(TRELLO.boardId)}/lists?` + qs({
         key: TRELLO.key, token, fields: "name", filter: "open"
       });
@@ -680,7 +622,7 @@
       return res.json();
     }
 
-    async function fetchBoardCards(token) {
+    async function fetchBoardCards(token){
       const url = `${API_BASE}/boards/${encodeURIComponent(TRELLO.boardId)}/cards?` + qs({
         key: TRELLO.key, token, fields: CARD_FIELDS, filter: "open"
       });
@@ -689,7 +631,7 @@
       return res.json();
     }
 
-    async function fetchCardChecklists(token, cardId) {
+    async function fetchCardChecklists(token, cardId){
       const url = `${API_BASE}/cards/${encodeURIComponent(cardId)}/checklists?` + qs({
         key: TRELLO.key, token
       });
@@ -698,39 +640,39 @@
       return res.json();
     }
 
-    function isDoneListName(name) { return DONE_LIST_NAMES.has(name); }
+    function isDoneListName(name){ return DONE_LIST_NAMES.has(name); }
 
-    function pickEventColorFromLabels(labels) {
+    function pickEventColorFromLabels(labels){
       const firstColored = (labels || []).find(l => l && l.color);
       if (!firstColored) return null;
       return TRELLO_LABEL_COLOR_TO_HEX[firstColored.color] || null;
     }
 
-    function makeExclusiveEnd(dueIso) {
+    function makeExclusiveEnd(dueIso){
       const d = new Date(dueIso);
       d.setDate(d.getDate() + 1);
       return d.toISOString();
     }
 
-    function cardToEvent(card) {
+    function cardToEvent(card){
       if (doneListIds.has(card.idList)) return null;
       if (!card.start && !card.due) return null;
 
       const listName = listIdToName.get(card.idList) || "Liste";
-      const title = `[${listName}] ${card.name}`;
+      const title = card.name; // compact: no [Liste] prefix
 
       const labels = (card.labels || []).map(l => ({ id: l.id, name: l.name, color: l.color }));
       const baseColor = pickEventColorFromLabels(labels);
 
-      let start = card.start || card.due;
-      let end = null;
+      const start = card.start || card.due;
+      let end = undefined;
       if (card.start && card.due) end = makeExclusiveEnd(card.due);
 
       return {
         id: card.id,
         title,
         start,
-        end: end || undefined,
+        end,
         allDay: true,
         url: card.url,
         backgroundColor: baseColor || undefined,
@@ -745,7 +687,7 @@
       };
     }
 
-    function rebuildLabelDropdown(events) {
+    function rebuildLabelDropdown(events){
       const select = document.getElementById("labelFilter");
       const labels = [];
 
@@ -771,7 +713,7 @@
       select.value = [...select.options].some(o => o.value === current) ? current : "__ALL__";
     }
 
-    function applyFilter() {
+    function applyFilter(){
       const labelId = document.getElementById("labelFilter").value;
       const q = (document.getElementById("searchInput")?.value || "").trim().toLowerCase();
 
@@ -787,6 +729,7 @@
         });
       }
 
+      // homogeneous coloring when label selected
       if (labelId !== "__ALL__") {
         const hex = labelIdToHex.get(labelId) || null;
         if (hex) {
@@ -801,13 +744,13 @@
 
       calendar.removeAllEvents();
       calendar.addEventSource(filtered);
-      setStatus(`${filtered.length} tâche(s) affichée(s)`);
 
-      renderGanttIfNeeded();
+      setStatus(`${filtered.length} tâche(s) affichée(s)`);
+      renderGantt();
     }
 
-    // Tooltip
-    function ensureTooltip() {
+    // Tooltip helpers
+    function ensureTooltip(){
       if (tooltipEl) return tooltipEl;
       tooltipEl = document.createElement("div");
       tooltipEl.className = "tt";
@@ -816,7 +759,7 @@
       return tooltipEl;
     }
 
-    function moveTooltip(mouseEvent) {
+    function moveTooltip(mouseEvent){
       if (!tooltipEl) return;
       const pad = 14;
       let x = mouseEvent.clientX + pad;
@@ -833,13 +776,13 @@
       tooltipEl.style.top = y + "px";
     }
 
-    function hideTooltip() {
+    function hideTooltip(){
       if (!tooltipEl) return;
       tooltipEl.style.display = "none";
       tooltipEl.innerHTML = "";
     }
 
-    function escapeHtml(s) {
+    function escapeHtml(s){
       return String(s)
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
@@ -848,7 +791,7 @@
         .replaceAll("'", "&#039;");
     }
 
-    function renderChecklistHtml(checklists) {
+    function renderChecklistHtml(checklists){
       if (!checklists || checklists.length === 0) {
         return `<div class="meta">Aucune checklist</div>`;
       }
@@ -872,14 +815,14 @@
       return html;
     }
 
-    async function load() {
+    async function load(){
       setError("");
 
       const token = getToken();
       if (!token) {
         setStatus("Renseigne ton token Trello puis clique sur “Valider”.");
         calendar?.removeAllEvents();
-        renderGanttIfNeeded(true);
+        renderGantt(true);
         return;
       }
 
@@ -897,25 +840,22 @@
       setError("");
     }
 
-    // ===== GANTT rendering =====
+    // ===== GANTT packing (overlap stacking) =====
+    function startOfDay(d){
+      const x = new Date(d);
+      x.setHours(0,0,0,0);
+      return x;
+    }
+    function diffDays(a, b){
+      const ms = startOfDay(b).getTime() - startOfDay(a).getTime();
+      return Math.round(ms / 86400000);
+    }
     function clampDate(d, min, max){
       const t = d.getTime();
       if (t < min.getTime()) return new Date(min);
       if (t > max.getTime()) return new Date(max);
       return d;
     }
-
-    function startOfDay(d){
-      const x = new Date(d);
-      x.setHours(0,0,0,0);
-      return x;
-    }
-
-    function diffDays(a, b){
-      const ms = startOfDay(b).getTime() - startOfDay(a).getTime();
-      return Math.round(ms / 86400000);
-    }
-
     function formatRange(start, end){
       const fmt = new Intl.DateTimeFormat("fr", { day:"2-digit", month:"short", year:"numeric" });
       const s = fmt.format(start);
@@ -924,33 +864,10 @@
       const e = fmt.format(eInc);
       return `${s} → ${e}`;
     }
-
-    function getFilteredEventsFromCalendar(){
-      const sources = calendar.getEvents();
-      return sources.map(ev => ({
-        id: ev.id,
-        title: ev.title,
-        start: ev.startStr,
-        end: ev.endStr || undefined,
-        allDay: ev.allDay,
-        url: ev.url,
-        backgroundColor: ev.backgroundColor,
-        borderColor: ev.borderColor,
-        textColor: ev.textColor,
-        extendedProps: ev.extendedProps
-      }));
-    }
-
-    function computeScaleVars(totalDays){
-      const dayW = Math.max(14, Math.min(30, Math.floor((window.innerWidth - 520) / Math.max(28, totalDays))));
-      const weekW = dayW * 7;
-      return { dayW, weekW };
-    }
-
     function weekTicks(rangeStart, rangeEnd){
       const ticks = [];
       const d = startOfDay(rangeStart);
-      const day = d.getDay(); // 0=Sun..6=Sat
+      const day = d.getDay(); // 0..6
       const deltaToMon = (day === 0) ? 1 : (day <= 1 ? (1 - day) : (8 - day));
       d.setDate(d.getDate() + deltaToMon);
 
@@ -962,24 +879,53 @@
       return ticks;
     }
 
-    function renderGanttIfNeeded(forceEmpty=false){
-      const mode = getViewMode();
-      document.body.classList.toggle("ganttmode", mode === "gantt");
+    function computeScaleVars(totalDays){
+      // responsive: smaller day width on small screens, but readable
+      const vw = window.innerWidth;
+      const reserved = Math.min(520, Math.max(360, Math.floor(vw * 0.45)));
+      const base = Math.floor((vw - reserved) / Math.max(22, totalDays));
+      const dayW = Math.max(10, Math.min(26, base));
+      const weekW = dayW * 7;
+      return { dayW, weekW };
+    }
 
-      const calBtn = document.getElementById("modeCalendarBtn");
-      const ganttBtn = document.getElementById("modeGanttBtn");
-      calBtn.classList.toggle("active", mode !== "gantt");
-      ganttBtn.classList.toggle("active", mode === "gantt");
+    function getFilteredEventsFromCalendar(){
+      return calendar.getEvents().map(ev => ({
+        id: ev.id,
+        title: ev.title,
+        start: ev.startStr,
+        end: ev.endStr || undefined, // exclusive if present
+        url: ev.url,
+        backgroundColor: ev.backgroundColor,
+        textColor: ev.textColor,
+        extendedProps: ev.extendedProps
+      }));
+    }
 
-      const ganttOptions = document.getElementById("ganttOptions");
-      if (ganttOptions) ganttOptions.style.display = (mode === "gantt") ? "inline-flex" : "none";
-
-      const ganttEl = document.getElementById("gantt");
-      if (mode !== "gantt") {
-        ganttEl.innerHTML = "";
-        return;
+    function packEventsIntoLanes(items){
+      // items: {sDay, eDay, ...} inclusive day indices (integers)
+      // classic greedy interval partitioning
+      const lanesEnd = []; // last endDay per lane
+      for (const it of items) {
+        let placed = false;
+        for (let i=0; i<lanesEnd.length; i++) {
+          if (it.sDay > lanesEnd[i]) { // no overlap (strictly after)
+            it.lane = i;
+            lanesEnd[i] = it.eDay;
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          it.lane = lanesEnd.length;
+          lanesEnd.push(it.eDay);
+        }
       }
+      return { laneCount: lanesEnd.length };
+    }
 
+    function renderGantt(forceEmpty=false){
+      const ganttEl = document.getElementById("gantt");
       const token = getToken();
       if (forceEmpty || !token) {
         ganttEl.innerHTML = `
@@ -999,120 +945,157 @@
       const totalDays = Math.max(1, diffDays(rangeStart, rangeEnd));
 
       const { dayW, weekW } = computeScaleVars(totalDays);
-
-      const events = getFilteredEventsFromCalendar()
-        .filter(ev => ev.start)
-        .map(ev => {
-          const s = startOfDay(new Date(ev.start));
-          const e = ev.end ? startOfDay(new Date(ev.end)) : null; // end exclusive if present
-          return { ...ev, _s: s, _e: e };
-        })
-        .sort((a,b) => a._s - b._s);
-
       const ticks = weekTicks(rangeStart, rangeEnd);
       const rangeLabel = formatRange(rangeStart, rangeEnd);
 
       const today = startOfDay(new Date());
-      const todayOffset = diffDays(rangeStart, today);
       const showToday = today >= rangeStart && today < rangeEnd;
+      const todayOffset = diffDays(rangeStart, today);
 
-      const groupBy = getGroupByList();
       const collapsed = getCollapsed();
 
-      function groupKey(ev){
-        return (ev.extendedProps?.listName || "Sans liste");
-      }
+      // collect events by listName
+      const events = getFilteredEventsFromCalendar()
+        .filter(ev => ev.start)
+        .map(ev => {
+          const listName = ev.extendedProps?.listName || "Sans liste";
+          const s = startOfDay(new Date(ev.start));
+          const eEx = ev.end ? startOfDay(new Date(ev.end)) : null; // exclusive
+          const hasRange = !!(eEx && eEx > s);
+          // display end inclusive
+          const eInc = hasRange ? new Date(eEx.getTime() - 86400000) : s;
 
-      // group -> events
-      const groups = new Map();
+          // clamp to visible
+          const clampedS = clampDate(s, rangeStart, new Date(rangeEnd.getTime() - 86400000));
+          const clampedE = clampDate(eInc, rangeStart, new Date(rangeEnd.getTime() - 86400000));
+
+          const sDay = diffDays(rangeStart, clampedS);
+          const eDay = diffDays(rangeStart, clampedE);
+
+          return {
+            ...ev,
+            listName,
+            _s: clampedS,
+            _e: clampedE,
+            sDay,
+            eDay,
+            isMilestone: !hasRange
+          };
+        });
+
+      const byList = new Map();
       for (const ev of events) {
-        const k = groupKey(ev);
-        if (!groups.has(k)) groups.set(k, []);
-        groups.get(k).push(ev);
+        if (!byList.has(ev.listName)) byList.set(ev.listName, []);
+        byList.get(ev.listName).push(ev);
       }
 
-      const groupNames = groupBy
-        ? [...groups.keys()].sort((a,b) => a.localeCompare(b, "fr"))
-        : ["__ALL__"];
+      const listNames = [...byList.keys()].sort((a,b) => a.localeCompare(b, "fr"));
 
-      let rowsHtml = "";
-      for (const gName of groupNames) {
-        const gEvents = groupBy ? (groups.get(gName) || []) : events;
-        const sorted = gEvents.slice().sort((a,b) => (a._s - b._s) || (a.title||"").localeCompare(b.title||"", "fr"));
+      // Precompute heights per list (packing)
+      const listModels = listNames.map(name => {
+        const items = (byList.get(name) || []).slice()
+          .sort((a,b) => (a.sDay - b.sDay) || ((b.eDay - b.sDay) - (a.eDay - a.sDay)) || (a.title||"").localeCompare(b.title||"", "fr"));
 
-        if (groupBy) {
-          const isCollapsed = collapsed.has(gName);
-          rowsHtml += `
-            <div class="group-head" data-group="${escapeHtml(gName)}">
-              <div class="ghl">
-                <div class="group-pill" data-action="toggle-group" title="Cliquer pour replier/déplier">
-                  ${escapeHtml(gName)} <span>(${sorted.length})</span> ${isCollapsed ? "▸" : "▾"}
-                </div>
-              </div>
-              <div class="ghr"></div>
+        // pack
+        const { laneCount } = packEventsIntoLanes(items);
+        const collapsedNow = collapsed.has(name);
+
+        const laneH = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--gantt-lane-h")) || 20;
+        const laneGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--gantt-lane-gap")) || 6;
+        const padY = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--gantt-pad-y")) || 10;
+
+        const height = collapsedNow
+          ? 44
+          : (padY*2 + laneCount*laneH + Math.max(0, laneCount-1)*laneGap);
+
+        return { name, items, laneCount, height, collapsed: collapsedNow };
+      });
+
+      // Build left & right HTML with aligned heights
+      let leftHtml = "";
+      let rightHtml = "";
+
+      for (const lm of listModels) {
+        const safeName = escapeHtml(lm.name);
+        const count = lm.items.length;
+        const chevron = lm.collapsed ? "▸" : "▾";
+
+        leftHtml += `
+          <div class="listRow" data-action="toggle-list" data-list="${safeName}" style="height:${lm.height}px">
+            <div style="min-width:0">
+              <div class="listName" title="${safeName}">${safeName}</div>
+              <div class="listMeta">${count} carte(s) • ${lm.collapsed ? "replié" : `${lm.laneCount} lane(s)`}</div>
             </div>
-          `;
-          if (isCollapsed) continue;
+            <div class="listMeta">${chevron}</div>
+          </div>
+        `;
+
+        // Right lane block
+        let bars = "";
+        if (!lm.collapsed) {
+          for (const it of lm.items) {
+            const color = it.backgroundColor || it.extendedProps?.baseColor || "#475569";
+            const textColor = it.textColor || "#ffffff";
+
+            const leftPx = it.sDay * dayW;
+            const widthPx = Math.max(dayW, (it.eDay - it.sDay + 1) * dayW);
+
+            const laneH = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--gantt-lane-h")) || 20;
+            const laneGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--gantt-lane-gap")) || 6;
+            const padY = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--gantt-pad-y")) || 10;
+            const topPx = padY + it.lane * (laneH + laneGap) + (laneH/2);
+
+            const safeTitle = escapeHtml(it.title || "");
+
+            if (it.isMilestone) {
+              bars += `
+                <div class="milestone"
+                  data-id="${escapeHtml(it.id)}"
+                  data-url="${escapeHtml(it.url || "")}"
+                  style="left:${leftPx + (dayW/2)}px; top:${topPx}px; background:${color};"
+                  title="${safeTitle}">
+                </div>
+              `;
+            } else {
+              bars += `
+                <div class="bar"
+                  data-id="${escapeHtml(it.id)}"
+                  data-url="${escapeHtml(it.url || "")}"
+                  style="left:${leftPx}px; top:${topPx}px; width:${widthPx}px; transform: translateY(-50%); background:${color}; color:${textColor}; border-color:${color};"
+                  title="${safeTitle}">
+                  <span class="t">${safeTitle}</span>
+                </div>
+              `;
+            }
+          }
         }
 
-        for (const ev of sorted) {
-          const listName = ev.extendedProps?.listName || "";
-          const color = ev.backgroundColor || ev.extendedProps?.baseColor || "#475569";
-          const textColor = ev.textColor || "#ffffff";
-
-          const hasRange = !!(ev._s && ev._e);
-          const isBar = hasRange && ev._e > ev._s;
-          const isMilestone = !isBar;
-
-          // Clamp within visible range (end shown as inclusive)
-          let s = clampDate(ev._s, rangeStart, new Date(rangeEnd.getTime() - 86400000));
-          let e = ev._e ? clampDate(new Date(ev._e.getTime() - 86400000), rangeStart, new Date(rangeEnd.getTime() - 86400000)) : s;
-
-          const leftDays = diffDays(rangeStart, s);
-          const rightDays = diffDays(rangeStart, e);
-
-          const leftPx = leftDays * dayW;
-          const widthPx = Math.max(dayW, (rightDays - leftDays + 1) * dayW);
-
-          const safeTitle = escapeHtml(ev.title);
-          const safeList = escapeHtml(listName);
-
-          rowsHtml += `
-            <div class="gantt-row" data-id="${escapeHtml(ev.id)}" data-url="${escapeHtml(ev.url || "")}">
-              <div class="lcell">
-                <div class="stack">
-                  <div class="name" title="${safeTitle}">${safeTitle}</div>
-                  <div class="meta" title="${safeList}">${safeList}</div>
-                </div>
-              </div>
-              <div class="rcell">
-                ${
-                  isMilestone
-                    ? `<div class="milestone" style="left:${leftPx + (dayW/2)}px; background:${color};" title="${safeTitle}"></div>`
-                    : `<div class="bar" style="left:${leftPx}px; width:${widthPx}px; background:${color}; color:${textColor}; border-color:${color};" title="${safeTitle}">
-                        <span class="t">${safeTitle}</span>
-                      </div>`
-                }
-              </div>
+        rightHtml += `
+          <div class="laneBlock" style="height:${lm.height}px">
+            <div class="laneInner">
+              ${bars}
             </div>
-          `;
-        }
-
-        if (!groupBy) break;
+          </div>
+        `;
       }
+
+      const headerLeftExtra = `
+        <span style="color:var(--muted); font-weight:950; font-size:11px; letter-spacing:.10em">LISTES</span>
+        <span style="color:var(--muted); font-weight:950; font-size:11px">${listModels.length}</span>
+      `;
 
       ganttEl.innerHTML = `
         <div class="gantt-shell" style="--gantt-day-w:${dayW}px; --gantt-week-w:${weekW}px;">
           <div class="gantt-top">
             <div>
               <div class="range">Gantt • ${escapeHtml(rangeLabel)}</div>
-              <div class="hint">${events.length} tâche(s) dans la plage visible • Survol = checklists</div>
+              <div class="hint">${events.length} tâche(s) • chevauchements empilés automatiquement</div>
             </div>
-            <div class="hint">Astuce: utilise Prev/Next/Today (toolbar en haut)</div>
+            <div class="hint">Clique une liste pour replier • Survol carte = checklists</div>
           </div>
 
           <div class="gantt-head">
-            <div class="hl">Tâches</div>
+            <div class="hl">${headerLeftExtra}</div>
             <div class="hr">
               <div class="ticks">
                 ${ticks.map(t => `<div class="tick">${escapeHtml(t)}</div>`).join("")}
@@ -1120,15 +1103,14 @@
             </div>
           </div>
 
-          <div class="gantt-grid">
-            <div class="gantt-left"></div>
-            <div class="gantt-right">
+          <div class="gantt-scroll">
+            <div class="gantt-left">${leftHtml || ""}</div>
+            <div class="gantt-rightWrap">
               ${showToday ? `<div class="todayLine" style="left:${(todayOffset * dayW) + (dayW/2)}px"></div>` : ``}
+              <div style="position:relative; z-index:1; min-width:${totalDays * dayW}px">
+                ${rightHtml || ""}
+              </div>
             </div>
-          </div>
-
-          <div class="gantt-rows">
-            ${rowsHtml || `<div style="padding:14px 12px; color:var(--muted); font-weight:800;">Aucune tâche sur cette période.</div>`}
           </div>
         </div>
       `;
@@ -1141,37 +1123,37 @@
       const token = getToken();
       if (!token) return;
 
+      // tooltip move
       ganttEl.onmousemove = (e) => { if (e) moveTooltip(e); };
 
+      // click handlers: list collapse or open card
       ganttEl.onclick = (e) => {
-        const actionEl = e.target.closest("[data-action='toggle-group']");
-        if (actionEl) {
-          const head = actionEl.closest(".group-head");
-          const g = head?.getAttribute("data-group");
-          if (g) {
+        const listToggle = e.target.closest("[data-action='toggle-list']");
+        if (listToggle) {
+          const name = listToggle.getAttribute("data-list");
+          if (name) {
             const collapsed = getCollapsed();
-            if (collapsed.has(g)) collapsed.delete(g); else collapsed.add(g);
+            if (collapsed.has(name)) collapsed.delete(name);
+            else collapsed.add(name);
             setCollapsed(collapsed);
-            renderGanttIfNeeded();
+            renderGantt();
           }
           return;
         }
 
-        const row = e.target.closest(".gantt-row");
-        if (!row) return;
-        const url = row.getAttribute("data-url");
-        if (url) window.open(url, "_blank", "noopener,noreferrer");
+        const cardEl = e.target.closest("[data-id][data-url]");
+        if (cardEl) {
+          const url = cardEl.getAttribute("data-url");
+          if (url) window.open(url, "_blank", "noopener,noreferrer");
+        }
       };
 
-      ganttEl.onmouseleave = (e) => {
-        if (e.target === ganttEl) hideTooltip();
-      };
-
+      // hover tooltip for cards/milestones
       ganttEl.onmouseover = async (e) => {
-        const row = e.target.closest(".gantt-row");
-        if (!row) return;
+        const cardEl = e.target.closest("[data-id]");
+        if (!cardEl) return;
 
-        const cardId = row.getAttribute("data-id");
+        const cardId = cardEl.getAttribute("data-id");
         if (!cardId) return;
 
         const ev = calendar.getEventById(cardId);
@@ -1210,25 +1192,15 @@
           `;
         }
       };
+
+      ganttEl.onmouseleave = () => hideTooltip();
     }
 
-    function syncGanttOptionsUI(){
-      const mode = getViewMode();
-      const opt = document.getElementById("ganttOptions");
-      if (opt) opt.style.display = (mode === "gantt") ? "inline-flex" : "none";
-
-      const groupBtn = document.getElementById("ganttGroupBtn");
-      const z1 = document.getElementById("ganttZoom1Btn");
-      const z3 = document.getElementById("ganttZoom3Btn");
-      const z6 = document.getElementById("ganttZoom6Btn");
-
-      const groupBy = getGroupByList();
+    function syncZoomUI(){
       const z = getZoom();
-
-      if (groupBtn) groupBtn.classList.toggle("active", groupBy);
-      if (z1) z1.classList.toggle("active", z === "1");
-      if (z3) z3.classList.toggle("active", z === "3");
-      if (z6) z6.classList.toggle("active", z === "6");
+      document.getElementById("zoom1").classList.toggle("active", z === "1");
+      document.getElementById("zoom3").classList.toggle("active", z === "3");
+      document.getElementById("zoom6").classList.toggle("active", z === "6");
     }
 
     function applyZoomView(){
@@ -1240,106 +1212,33 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      const el = document.getElementById("calendar");
-
-      calendar = new FullCalendar.Calendar(el, {
+      // Init FullCalendar (toolbar only)
+      calendar = new FullCalendar.Calendar(document.getElementById("calendar"), {
         locale: "fr",
         firstDay: 1,
         height: "auto",
 
         initialView: "multiMonthQuarter",
         views: {
-          multiMonthQuarter: { type: "multiMonth", duration: { months: 3 }, buttonText: "Trimestre" },
-          multiMonth1: { type: "multiMonth", duration: { months: 1 }, buttonText: "1 mois" },
-          multiMonth6: { type: "multiMonth", duration: { months: 6 }, buttonText: "6 mois" }
+          multiMonthQuarter: { type: "multiMonth", duration: { months: 3 } },
+          multiMonth1: { type: "multiMonth", duration: { months: 1 } },
+          multiMonth6: { type: "multiMonth", duration: { months: 6 } }
         },
-        multiMonthMaxColumns: 3,
-        showNonCurrentDates: false,
-        fixedWeekCount: false,
-        weekNumbers: true,
 
         headerToolbar: {
           left: "prev,next today",
           center: "title",
-          right: "multiMonthQuarter,dayGridMonth,timeGridWeek,listMonth"
+          right: "" // avoid duplicate duration controls
         },
-
-        dayMaxEvents: true,
-        eventDisplay: "block",
 
         datesSet: () => {
-          renderGanttIfNeeded();
-        },
-
-        eventClick(info) {
-          info.jsEvent.preventDefault();
-          if (info.event.url) window.open(info.event.url, "_blank", "noopener,noreferrer");
-        },
-
-        eventMouseEnter: async (info) => {
-          const token = getToken();
-          if (!token) return;
-
-          const cardId = info.event.id;
-          const tt = ensureTooltip();
-          const listName = info.event.extendedProps.listName || "";
-
-          tt.innerHTML = `
-            <h4>${escapeHtml(info.event.title)}</h4>
-            <div class="meta">${escapeHtml(listName)}</div>
-            <div class="meta">Chargement des checklists…</div>
-          `;
-          tt.style.display = "block";
-          if (info.jsEvent) moveTooltip(info.jsEvent);
-
-          try {
-            if (!checklistCache.has(cardId)) checklistCache.set(cardId, { loaded: false, checklists: [] });
-            const cached = checklistCache.get(cardId);
-
-            if (!cached.loaded) {
-              cached.checklists = await fetchCardChecklists(token, cardId);
-              cached.loaded = true;
-            }
-
-            tt.innerHTML = `
-              <h4>${escapeHtml(info.event.title)}</h4>
-              <div class="meta">${escapeHtml(listName)}</div>
-              ${renderChecklistHtml(cached.checklists)}
-            `;
-          } catch (e) {
-            tt.innerHTML = `
-              <h4>${escapeHtml(info.event.title)}</h4>
-              <div class="meta">${escapeHtml(listName)}</div>
-              <div class="error">Impossible de charger les checklists</div>
-            `;
-          }
-        },
-        eventMouseLeave: hideTooltip,
-        eventMouseMove: (info) => { if (info.jsEvent) moveTooltip(info.jsEvent); }
+          renderGantt();
+        }
       });
 
       calendar.render();
 
-      // Restore & apply zoom (affects gantt range too)
-      applyZoomView();
-
-      // Mode buttons
-      const modeCalendarBtn = document.getElementById("modeCalendarBtn");
-      const modeGanttBtn = document.getElementById("modeGanttBtn");
-
-      function syncModeUI(){
-        const mode = getViewMode();
-        document.body.classList.toggle("ganttmode", mode === "gantt");
-        modeCalendarBtn.classList.toggle("active", mode !== "gantt");
-        modeGanttBtn.classList.toggle("active", mode === "gantt");
-        syncGanttOptionsUI();
-        renderGanttIfNeeded();
-      }
-
-      modeCalendarBtn.addEventListener("click", () => { setViewMode("calendar"); syncModeUI(); });
-      modeGanttBtn.addEventListener("click", () => { setViewMode("gantt"); syncModeUI(); });
-
-      // Search restore + debounce
+      // Restore search
       const searchInput = document.getElementById("searchInput");
       searchInput.value = getSearch();
       searchInput.addEventListener("input", () => {
@@ -1348,13 +1247,26 @@
         window.__searchT = setTimeout(() => applyFilter(), 120);
       });
 
-      // Filter
+      // Label filter
       document.getElementById("labelFilter").addEventListener("change", applyFilter);
 
+      // Zoom buttons (single source of duration control)
+      const setZoomAndRefresh = (z) => {
+        setZoom(z);
+        syncZoomUI();
+        applyZoomView();   // triggers datesSet -> renderGantt()
+      };
+      document.getElementById("zoom1").addEventListener("click", () => setZoomAndRefresh("1"));
+      document.getElementById("zoom3").addEventListener("click", () => setZoomAndRefresh("3"));
+      document.getElementById("zoom6").addEventListener("click", () => setZoomAndRefresh("6"));
+
+      syncZoomUI();
+      applyZoomView();
+
+      // Refresh / token actions
       document.getElementById("refreshBtn").addEventListener("click", () =>
         load().catch(err => { setError(err.message); setStatus(""); })
       );
-
       document.getElementById("logoutBtn").addEventListener("click", forgetToken);
 
       document.getElementById("saveTokenBtn").addEventListener("click", () => {
@@ -1366,42 +1278,11 @@
         load().catch(err => { setError(err.message); setStatus(""); });
       });
 
-      document.getElementById("compactToggle").addEventListener("change", (e) => {
-        document.body.classList.toggle("compact", !!e.target.checked);
-        renderGanttIfNeeded();
-      });
-
-      // Gantt option buttons
-      const ganttGroupBtn = document.getElementById("ganttGroupBtn");
-      const z1 = document.getElementById("ganttZoom1Btn");
-      const z3 = document.getElementById("ganttZoom3Btn");
-      const z6 = document.getElementById("ganttZoom6Btn");
-
-      function setZoomAndView(z){
-        setZoom(z);
-        applyZoomView();
-        syncGanttOptionsUI();
-        renderGanttIfNeeded();
-      }
-
-      ganttGroupBtn.addEventListener("click", () => {
-        setGroupByList(!getGroupByList());
-        syncGanttOptionsUI();
-        renderGanttIfNeeded();
-      });
-      z1.addEventListener("click", () => setZoomAndView("1"));
-      z3.addEventListener("click", () => setZoomAndView("3"));
-      z6.addEventListener("click", () => setZoomAndView("6"));
-
-      // On resize, keep gantt scale responsive
+      // Responsive re-render (scale)
       window.addEventListener("resize", () => {
         clearTimeout(window.__ganttResizeT);
-        window.__ganttResizeT = setTimeout(() => renderGanttIfNeeded(), 120);
+        window.__ganttResizeT = setTimeout(() => renderGantt(), 120);
       });
-
-      // Restore mode + options
-      syncGanttOptionsUI();
-      syncModeUI();
 
       load().catch(err => { setError(err.message); setStatus(""); });
     });
