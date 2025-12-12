@@ -159,6 +159,7 @@
       display:flex;
       align-items:center;
       gap: 10px;
+      flex-wrap: wrap;
     }
     .seg{
       display:inline-flex;
@@ -175,6 +176,7 @@
       font-weight: 900;
       color: var(--muted);
       cursor: pointer;
+      user-select: none;
     }
     .seg button.active{
       color: var(--text);
@@ -273,6 +275,8 @@
     .ganttmode #gantt{ display:block; }
     .ganttmode #calendar .fc-view-harness{ display:none; } /* garde toolbar FullCalendar */
 
+    .ganttmode #ganttOptions{ display:inline-flex !important; }
+
     .gantt-shell{
       border: 1px solid rgba(229,231,235,.95);
       border-radius: 16px;
@@ -304,7 +308,7 @@
       position: relative;
       display:grid;
       grid-template-columns: minmax(220px, 360px) 1fr;
-      min-height: 80px;
+      min-height: 60px;
     }
     .compact .gantt-grid{ grid-template-columns: minmax(200px, 320px) 1fr; }
 
@@ -384,7 +388,44 @@
       display:block;
       max-height: min(68vh, 900px);
       overflow:auto;
+      position: relative;
     }
+
+    /* Swimlanes (group by list) */
+    .group-head{
+      display:grid;
+      grid-template-columns: minmax(220px, 360px) 1fr;
+      background: rgba(246,247,251,.75);
+      border-top: 1px solid rgba(229,231,235,.95);
+      border-bottom: 1px solid rgba(229,231,235,.75);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .group-head .ghl{
+      padding: 10px 12px;
+      border-right: 1px solid rgba(229,231,235,.75);
+      display:flex; align-items:center; gap: 10px;
+      min-width:0;
+    }
+    .group-pill{
+      display:inline-flex; align-items:center; gap:8px;
+      border: 1px solid rgba(229,231,235,.95);
+      background: rgba(255,255,255,.9);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      user-select:none;
+    }
+    .group-pill span{
+      color: var(--muted);
+      font-weight: 900;
+      font-size: 11px;
+    }
+    .group-head .ghr{ position: relative; }
 
     .gantt-row{
       display:grid;
@@ -502,6 +543,11 @@
           </select>
         </div>
 
+        <div class="chip" title="Filtrer par texte (nom / liste)">
+          <strong>Recherche</strong>
+          <input id="searchInput" class="select" style="max-width:220px" placeholder="ex: onboarding…" />
+        </div>
+
         <button class="btn" id="refreshBtn">Rafraîchir</button>
         <button class="btn" id="logoutBtn" title="Oublier le token">Oublier</button>
 
@@ -526,6 +572,13 @@
           <div class="seg" role="tablist" aria-label="Mode d'affichage">
             <button id="modeCalendarBtn" class="active" type="button">Calendrier</button>
             <button id="modeGanttBtn" type="button">Gantt</button>
+          </div>
+
+          <div id="ganttOptions" class="seg" style="display:none" aria-label="Options Gantt">
+            <button id="ganttGroupBtn" type="button" title="Regrouper par liste">Par liste</button>
+            <button id="ganttZoom1Btn" type="button" title="Zoom 1 mois">1M</button>
+            <button id="ganttZoom3Btn" type="button" class="active" title="Zoom 3 mois">3M</button>
+            <button id="ganttZoom6Btn" type="button" title="Zoom 6 mois">6M</button>
           </div>
         </div>
 
@@ -573,6 +626,25 @@
     function getViewMode(){ return localStorage.getItem(VIEW_MODE_KEY) || "calendar"; }
     function setViewMode(mode){ localStorage.setItem(VIEW_MODE_KEY, mode); }
 
+    const SEARCH_KEY = "tc_search";
+    const GROUP_KEY = "tc_gantt_group";
+    const COLLAPSE_KEY = "tc_gantt_collapsed";
+    const ZOOM_KEY = "tc_gantt_zoom"; // "1" | "3" | "6"
+
+    function getSearch(){ return localStorage.getItem(SEARCH_KEY) || ""; }
+    function setSearch(v){ localStorage.setItem(SEARCH_KEY, v || ""); }
+    function getGroupByList(){ return (localStorage.getItem(GROUP_KEY) || "1") === "1"; }
+    function setGroupByList(v){ localStorage.setItem(GROUP_KEY, v ? "1" : "0"); }
+    function getCollapsed(){
+      try { return new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) || "[]")); }
+      catch { return new Set(); }
+    }
+    function setCollapsed(set){
+      localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...set]));
+    }
+    function getZoom(){ return localStorage.getItem(ZOOM_KEY) || "3"; }
+    function setZoom(z){ localStorage.setItem(ZOOM_KEY, z); }
+
     function setStatus(msg) { document.getElementById("status").textContent = msg || ""; }
     function setError(msg) { document.getElementById("error").textContent = msg || ""; }
 
@@ -584,7 +656,7 @@
       calendar?.removeAllEvents();
       setError("");
       setStatus("Token supprimé sur ce navigateur.");
-      renderGanttIfNeeded();
+      renderGanttIfNeeded(true);
     }
 
     function qs(params) { return new URLSearchParams(params).toString(); }
@@ -701,10 +773,19 @@
 
     function applyFilter() {
       const labelId = document.getElementById("labelFilter").value;
+      const q = (document.getElementById("searchInput")?.value || "").trim().toLowerCase();
 
       let filtered = (labelId === "__ALL__")
         ? allEvents
         : allEvents.filter(ev => (ev.extendedProps.labelIds || []).includes(labelId));
+
+      if (q) {
+        filtered = filtered.filter(ev => {
+          const t = (ev.title || "").toLowerCase();
+          const ln = (ev.extendedProps?.listName || "").toLowerCase();
+          return t.includes(q) || ln.includes(q);
+        });
+      }
 
       if (labelId !== "__ALL__") {
         const hex = labelIdToHex.get(labelId) || null;
@@ -838,7 +919,6 @@
     function formatRange(start, end){
       const fmt = new Intl.DateTimeFormat("fr", { day:"2-digit", month:"short", year:"numeric" });
       const s = fmt.format(start);
-      // end FullCalendar is exclusive for ranges; show inclusive end-1 day for humans
       const eInc = new Date(end);
       eInc.setDate(eInc.getDate() - 1);
       const e = fmt.format(eInc);
@@ -847,7 +927,6 @@
 
     function getFilteredEventsFromCalendar(){
       const sources = calendar.getEvents();
-      // Convert FullCalendar EventApi -> plain object compatible with current rendering
       return sources.map(ev => ({
         id: ev.id,
         title: ev.title,
@@ -863,17 +942,14 @@
     }
 
     function computeScaleVars(totalDays){
-      // Compact but readable: ~26px/jour desktop, clamp responsive
       const dayW = Math.max(14, Math.min(30, Math.floor((window.innerWidth - 520) / Math.max(28, totalDays))));
       const weekW = dayW * 7;
       return { dayW, weekW };
     }
 
     function weekTicks(rangeStart, rangeEnd){
-      // ticks every monday
       const ticks = [];
       const d = startOfDay(rangeStart);
-      // shift to next Monday (1)
       const day = d.getDay(); // 0=Sun..6=Sat
       const deltaToMon = (day === 0) ? 1 : (day <= 1 ? (1 - day) : (8 - day));
       d.setDate(d.getDate() + deltaToMon);
@@ -894,6 +970,9 @@
       const ganttBtn = document.getElementById("modeGanttBtn");
       calBtn.classList.toggle("active", mode !== "gantt");
       ganttBtn.classList.toggle("active", mode === "gantt");
+
+      const ganttOptions = document.getElementById("ganttOptions");
+      if (ganttOptions) ganttOptions.style.display = (mode === "gantt") ? "inline-flex" : "none";
 
       const ganttEl = document.getElementById("gantt");
       if (mode !== "gantt") {
@@ -925,7 +1004,7 @@
         .filter(ev => ev.start)
         .map(ev => {
           const s = startOfDay(new Date(ev.start));
-          const e = ev.end ? startOfDay(new Date(ev.end)) : null; // end is exclusive if present
+          const e = ev.end ? startOfDay(new Date(ev.end)) : null; // end exclusive if present
           return { ...ev, _s: s, _e: e };
         })
         .sort((a,b) => a._s - b._s);
@@ -937,49 +1016,89 @@
       const todayOffset = diffDays(rangeStart, today);
       const showToday = today >= rangeStart && today < rangeEnd;
 
-      // Build rows
-      let rowsHtml = "";
+      const groupBy = getGroupByList();
+      const collapsed = getCollapsed();
+
+      function groupKey(ev){
+        return (ev.extendedProps?.listName || "Sans liste");
+      }
+
+      // group -> events
+      const groups = new Map();
       for (const ev of events) {
-        const listName = ev.extendedProps?.listName || "";
-        const color = ev.backgroundColor || ev.extendedProps?.baseColor || "#475569";
-        const textColor = ev.textColor || "#ffffff";
+        const k = groupKey(ev);
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(ev);
+      }
 
-        const hasRange = !!(ev._s && ev._e);
-        const isBar = hasRange && ev._e > ev._s;
-        const isMilestone = !isBar;
+      const groupNames = groupBy
+        ? [...groups.keys()].sort((a,b) => a.localeCompare(b, "fr"))
+        : ["__ALL__"];
 
-        // Clamp within visible range
-        let s = clampDate(ev._s, rangeStart, new Date(rangeEnd.getTime() - 86400000));
-        let e = ev._e ? clampDate(new Date(ev._e.getTime() - 86400000), rangeStart, new Date(rangeEnd.getTime() - 86400000)) : s;
+      let rowsHtml = "";
+      for (const gName of groupNames) {
+        const gEvents = groupBy ? (groups.get(gName) || []) : events;
+        const sorted = gEvents.slice().sort((a,b) => (a._s - b._s) || (a.title||"").localeCompare(b.title||"", "fr"));
 
-        const leftDays = diffDays(rangeStart, s);
-        const rightDays = diffDays(rangeStart, e);
+        if (groupBy) {
+          const isCollapsed = collapsed.has(gName);
+          rowsHtml += `
+            <div class="group-head" data-group="${escapeHtml(gName)}">
+              <div class="ghl">
+                <div class="group-pill" data-action="toggle-group" title="Cliquer pour replier/déplier">
+                  ${escapeHtml(gName)} <span>(${sorted.length})</span> ${isCollapsed ? "▸" : "▾"}
+                </div>
+              </div>
+              <div class="ghr"></div>
+            </div>
+          `;
+          if (isCollapsed) continue;
+        }
 
-        const leftPx = leftDays * dayW;
-        const widthPx = Math.max(dayW, (rightDays - leftDays + 1) * dayW);
+        for (const ev of sorted) {
+          const listName = ev.extendedProps?.listName || "";
+          const color = ev.backgroundColor || ev.extendedProps?.baseColor || "#475569";
+          const textColor = ev.textColor || "#ffffff";
 
-        const safeTitle = escapeHtml(ev.title);
-        const safeList = escapeHtml(listName);
+          const hasRange = !!(ev._s && ev._e);
+          const isBar = hasRange && ev._e > ev._s;
+          const isMilestone = !isBar;
 
-        rowsHtml += `
-          <div class="gantt-row" data-id="${escapeHtml(ev.id)}" data-url="${escapeHtml(ev.url || "")}">
-            <div class="lcell">
-              <div class="stack">
-                <div class="name" title="${safeTitle}">${safeTitle}</div>
-                <div class="meta" title="${safeList}">${safeList}</div>
+          // Clamp within visible range (end shown as inclusive)
+          let s = clampDate(ev._s, rangeStart, new Date(rangeEnd.getTime() - 86400000));
+          let e = ev._e ? clampDate(new Date(ev._e.getTime() - 86400000), rangeStart, new Date(rangeEnd.getTime() - 86400000)) : s;
+
+          const leftDays = diffDays(rangeStart, s);
+          const rightDays = diffDays(rangeStart, e);
+
+          const leftPx = leftDays * dayW;
+          const widthPx = Math.max(dayW, (rightDays - leftDays + 1) * dayW);
+
+          const safeTitle = escapeHtml(ev.title);
+          const safeList = escapeHtml(listName);
+
+          rowsHtml += `
+            <div class="gantt-row" data-id="${escapeHtml(ev.id)}" data-url="${escapeHtml(ev.url || "")}">
+              <div class="lcell">
+                <div class="stack">
+                  <div class="name" title="${safeTitle}">${safeTitle}</div>
+                  <div class="meta" title="${safeList}">${safeList}</div>
+                </div>
+              </div>
+              <div class="rcell">
+                ${
+                  isMilestone
+                    ? `<div class="milestone" style="left:${leftPx + (dayW/2)}px; background:${color};" title="${safeTitle}"></div>`
+                    : `<div class="bar" style="left:${leftPx}px; width:${widthPx}px; background:${color}; color:${textColor}; border-color:${color};" title="${safeTitle}">
+                        <span class="t">${safeTitle}</span>
+                      </div>`
+                }
               </div>
             </div>
-            <div class="rcell">
-              ${
-                isMilestone
-                  ? `<div class="milestone" style="left:${leftPx + (dayW/2)}px; background:${color};" title="${safeTitle}"></div>`
-                  : `<div class="bar" style="left:${leftPx}px; width:${widthPx}px; background:${color}; color:${textColor}; border-color:${color};" title="${safeTitle}">
-                      <span class="t">${safeTitle}</span>
-                    </div>`
-              }
-            </div>
-          </div>
-        `;
+          `;
+        }
+
+        if (!groupBy) break;
       }
 
       ganttEl.innerHTML = `
@@ -989,7 +1108,7 @@
               <div class="range">Gantt • ${escapeHtml(rangeLabel)}</div>
               <div class="hint">${events.length} tâche(s) dans la plage visible • Survol = checklists</div>
             </div>
-            <div class="hint">Astuce: utilise Prev/Next/Today en haut (toolbar FullCalendar)</div>
+            <div class="hint">Astuce: utilise Prev/Next/Today (toolbar en haut)</div>
           </div>
 
           <div class="gantt-head">
@@ -1014,7 +1133,6 @@
         </div>
       `;
 
-      // Attach interactions (click + tooltip)
       attachGanttInteractions();
     }
 
@@ -1023,20 +1141,29 @@
       const token = getToken();
       if (!token) return;
 
-      // event delegation
       ganttEl.onmousemove = (e) => { if (e) moveTooltip(e); };
 
       ganttEl.onclick = (e) => {
+        const actionEl = e.target.closest("[data-action='toggle-group']");
+        if (actionEl) {
+          const head = actionEl.closest(".group-head");
+          const g = head?.getAttribute("data-group");
+          if (g) {
+            const collapsed = getCollapsed();
+            if (collapsed.has(g)) collapsed.delete(g); else collapsed.add(g);
+            setCollapsed(collapsed);
+            renderGanttIfNeeded();
+          }
+          return;
+        }
+
         const row = e.target.closest(".gantt-row");
         if (!row) return;
         const url = row.getAttribute("data-url");
         if (url) window.open(url, "_blank", "noopener,noreferrer");
       };
 
-      ganttEl.onmouseenter = (e) => { /* noop */ };
-
       ganttEl.onmouseleave = (e) => {
-        // If leaving gantt container entirely
         if (e.target === ganttEl) hideTooltip();
       };
 
@@ -1085,6 +1212,33 @@
       };
     }
 
+    function syncGanttOptionsUI(){
+      const mode = getViewMode();
+      const opt = document.getElementById("ganttOptions");
+      if (opt) opt.style.display = (mode === "gantt") ? "inline-flex" : "none";
+
+      const groupBtn = document.getElementById("ganttGroupBtn");
+      const z1 = document.getElementById("ganttZoom1Btn");
+      const z3 = document.getElementById("ganttZoom3Btn");
+      const z6 = document.getElementById("ganttZoom6Btn");
+
+      const groupBy = getGroupByList();
+      const z = getZoom();
+
+      if (groupBtn) groupBtn.classList.toggle("active", groupBy);
+      if (z1) z1.classList.toggle("active", z === "1");
+      if (z3) z3.classList.toggle("active", z === "3");
+      if (z6) z6.classList.toggle("active", z === "6");
+    }
+
+    function applyZoomView(){
+      const z = getZoom();
+      if (!calendar) return;
+      if (z === "1") calendar.changeView("multiMonth1");
+      else if (z === "6") calendar.changeView("multiMonth6");
+      else calendar.changeView("multiMonthQuarter");
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       const el = document.getElementById("calendar");
 
@@ -1095,7 +1249,9 @@
 
         initialView: "multiMonthQuarter",
         views: {
-          multiMonthQuarter: { type: "multiMonth", duration: { months: 3 }, buttonText: "Trimestre" }
+          multiMonthQuarter: { type: "multiMonth", duration: { months: 3 }, buttonText: "Trimestre" },
+          multiMonth1: { type: "multiMonth", duration: { months: 1 }, buttonText: "1 mois" },
+          multiMonth6: { type: "multiMonth", duration: { months: 6 }, buttonText: "6 mois" }
         },
         multiMonthMaxColumns: 3,
         showNonCurrentDates: false,
@@ -1112,7 +1268,6 @@
         eventDisplay: "block",
 
         datesSet: () => {
-          // When navigating prev/next/today, keep gantt synced
           renderGanttIfNeeded();
         },
 
@@ -1165,6 +1320,9 @@
 
       calendar.render();
 
+      // Restore & apply zoom (affects gantt range too)
+      applyZoomView();
+
       // Mode buttons
       const modeCalendarBtn = document.getElementById("modeCalendarBtn");
       const modeGanttBtn = document.getElementById("modeGanttBtn");
@@ -1174,12 +1332,23 @@
         document.body.classList.toggle("ganttmode", mode === "gantt");
         modeCalendarBtn.classList.toggle("active", mode !== "gantt");
         modeGanttBtn.classList.toggle("active", mode === "gantt");
+        syncGanttOptionsUI();
         renderGanttIfNeeded();
       }
 
       modeCalendarBtn.addEventListener("click", () => { setViewMode("calendar"); syncModeUI(); });
       modeGanttBtn.addEventListener("click", () => { setViewMode("gantt"); syncModeUI(); });
 
+      // Search restore + debounce
+      const searchInput = document.getElementById("searchInput");
+      searchInput.value = getSearch();
+      searchInput.addEventListener("input", () => {
+        setSearch(searchInput.value);
+        clearTimeout(window.__searchT);
+        window.__searchT = setTimeout(() => applyFilter(), 120);
+      });
+
+      // Filter
       document.getElementById("labelFilter").addEventListener("change", applyFilter);
 
       document.getElementById("refreshBtn").addEventListener("click", () =>
@@ -1202,14 +1371,36 @@
         renderGanttIfNeeded();
       });
 
+      // Gantt option buttons
+      const ganttGroupBtn = document.getElementById("ganttGroupBtn");
+      const z1 = document.getElementById("ganttZoom1Btn");
+      const z3 = document.getElementById("ganttZoom3Btn");
+      const z6 = document.getElementById("ganttZoom6Btn");
+
+      function setZoomAndView(z){
+        setZoom(z);
+        applyZoomView();
+        syncGanttOptionsUI();
+        renderGanttIfNeeded();
+      }
+
+      ganttGroupBtn.addEventListener("click", () => {
+        setGroupByList(!getGroupByList());
+        syncGanttOptionsUI();
+        renderGanttIfNeeded();
+      });
+      z1.addEventListener("click", () => setZoomAndView("1"));
+      z3.addEventListener("click", () => setZoomAndView("3"));
+      z6.addEventListener("click", () => setZoomAndView("6"));
+
       // On resize, keep gantt scale responsive
       window.addEventListener("resize", () => {
-        // light debounce
         clearTimeout(window.__ganttResizeT);
         window.__ganttResizeT = setTimeout(() => renderGanttIfNeeded(), 120);
       });
 
-      // Restore mode on boot
+      // Restore mode + options
+      syncGanttOptionsUI();
       syncModeUI();
 
       load().catch(err => { setError(err.message); setStatus(""); });
