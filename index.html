@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Trello → Calendrier</title>
 
-  <!-- FullCalendar -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.css">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
 
@@ -16,11 +15,7 @@
       display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
       padding: 10px 14px; border-bottom: 1px solid #e5e7eb; background: #fff;
     }
-    #calendar {
-      padding: 10px 14px;
-      max-width: 1800px; /* vue très large */
-      margin: 0 auto;
-    }
+    #calendar { padding: 10px 14px; max-width: 2200px; margin: 0 auto; }
     .pill { display: inline-flex; align-items: center; gap: 8px; }
     select, button, input {
       padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff;
@@ -28,6 +23,26 @@
     input[type="password"] { min-width: 260px; }
     .muted { color: #6b7280; font-size: 13px; }
     .danger { color: #b91c1c; font-size: 13px; }
+
+    /* Tooltip */
+    .tt {
+      position: fixed;
+      z-index: 9999;
+      max-width: 420px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.12);
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.35;
+      pointer-events: none; /* n'interfère pas avec le survol */
+    }
+    .tt h4 { margin: 0 0 6px 0; font-size: 13px; }
+    .tt .meta { color: #6b7280; margin-bottom: 8px; }
+    .tt ul { margin: 0; padding-left: 18px; }
+    .tt li { margin: 2px 0; }
+    .tt .done { text-decoration: line-through; color: #6b7280; }
   </style>
 </head>
 
@@ -43,7 +58,6 @@
     <button id="refreshBtn">Rafraîchir</button>
     <button id="logoutBtn" title="Oublier le token stocké sur ce navigateur">Oublier le token</button>
 
-    <!-- Token input (remplace la pop-in) -->
     <div class="pill">
       <input id="tokenInput" type="password" placeholder="Trello token" />
       <button id="saveTokenBtn">Valider le token</button>
@@ -56,44 +70,29 @@
   <div id="calendar"></div>
 
   <script>
-    // =========================
-    // CONFIG (OK en clair)
-    // =========================
     const TRELLO = {
       key: "ec995ad68de9cdaafd64b131e5fa00ec",
       boardId: "6490c5416cea9255ba3b0383"
-      // IMPORTANT : ne PAS mettre de token ici (Option B1)
-      // IMPORTANT : le "Secret" Trello n'est PAS utilisé côté front
     };
 
-    // Champs essentiels (pas de description)
-    const CARD_FIELDS = "name,due,start,closed,url,idLabels,labels";
+    const CARD_FIELDS = "name,due,start,closed,url,idLabels,labels,idList";
     const API_BASE = "https://api.trello.com/1";
 
     let allEvents = [];
     let calendar;
+    let listIdToName = new Map();
 
-    // =========================
-    // UI helpers
-    // =========================
-    function setStatus(msg) {
-      document.getElementById("status").textContent = msg || "";
-    }
-    function setError(msg) {
-      document.getElementById("error").textContent = msg || "";
-    }
+    // Cache checklists: cardId -> { loaded: bool, items: [...] }
+    const checklistCache = new Map();
 
-    // =========================
-    // Token handling (B1 sans prompt)
-    // =========================
-    function getToken() {
-      return localStorage.getItem("trello_token");
-    }
+    // Tooltip instance
+    let tooltipEl = null;
 
-    function saveToken(token) {
-      localStorage.setItem("trello_token", token);
-    }
+    function setStatus(msg) { document.getElementById("status").textContent = msg || ""; }
+    function setError(msg) { document.getElementById("error").textContent = msg || ""; }
 
+    function getToken() { return localStorage.getItem("trello_token"); }
+    function saveToken(token) { localStorage.setItem("trello_token", token); }
     function forgetToken() {
       localStorage.removeItem("trello_token");
       document.getElementById("tokenInput").value = "";
@@ -102,13 +101,7 @@
       setStatus("Token supprimé sur ce navigateur.");
     }
 
-    // =========================
-    // Small utils
-    // =========================
-    function qs(params) {
-      const u = new URLSearchParams(params);
-      return u.toString();
-    }
+    function qs(params) { return new URLSearchParams(params).toString(); }
 
     function uniqBy(arr, keyFn) {
       const seen = new Set();
@@ -120,9 +113,18 @@
       });
     }
 
-    // =========================
-    // Data fetching
-    // =========================
+    async function fetchBoardLists(token) {
+      const url = `${API_BASE}/boards/${encodeURIComponent(TRELLO.boardId)}/lists?` + qs({
+        key: TRELLO.key,
+        token,
+        fields: "name",
+        filter: "open"
+      });
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Trello API error (${res.status})`);
+      return res.json();
+    }
+
     async function fetchBoardCards(token) {
       const url = `${API_BASE}/boards/${encodeURIComponent(TRELLO.boardId)}/cards?` + qs({
         key: TRELLO.key,
@@ -130,29 +132,39 @@
         fields: CARD_FIELDS,
         filter: "open"
       });
-
       const res = await fetch(url);
-      if (!res.ok) {
-        throw new Error(`Trello API error (${res.status})`);
-      }
+      if (!res.ok) throw new Error(`Trello API error (${res.status})`);
       return res.json();
     }
 
-    // Trello card -> FullCalendar event
+    // ✅ Checklists d'une carte
+    async function fetchCardChecklists(token, cardId) {
+      const url = `${API_BASE}/cards/${encodeURIComponent(cardId)}/checklists?` + qs({
+        key: TRELLO.key,
+        token
+      });
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Trello API error (${res.status})`);
+      return res.json();
+    }
+
     function cardToEvent(card) {
       const start = card.due || card.start;
       if (!start) return null;
 
+      const listName = listIdToName.get(card.idList) || "Liste";
+      const title = `[${listName}] ${card.name}`;
+
       return {
         id: card.id,
-        title: card.name,
+        title,
         start,
         allDay: true,
         url: card.url,
         extendedProps: {
           labelIds: card.idLabels || [],
           labels: (card.labels || []).map(l => ({ id: l.id, name: l.name, color: l.color })),
-          closed: !!card.closed
+          listName
         }
       };
     }
@@ -189,6 +201,77 @@
       setStatus(`${filtered.length} tâche(s) affichée(s)`);
     }
 
+    // ---------- Tooltip helpers ----------
+    function ensureTooltip() {
+      if (tooltipEl) return tooltipEl;
+      tooltipEl = document.createElement("div");
+      tooltipEl.className = "tt";
+      tooltipEl.style.display = "none";
+      document.body.appendChild(tooltipEl);
+      return tooltipEl;
+    }
+
+    function moveTooltip(mouseEvent) {
+      if (!tooltipEl) return;
+      const pad = 14;
+      let x = mouseEvent.clientX + pad;
+      let y = mouseEvent.clientY + pad;
+
+      // keep in viewport
+      const rect = tooltipEl.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      if (x + rect.width + pad > vw) x = vw - rect.width - pad;
+      if (y + rect.height + pad > vh) y = vh - rect.height - pad;
+
+      tooltipEl.style.left = x + "px";
+      tooltipEl.style.top = y + "px";
+    }
+
+    function hideTooltip() {
+      if (!tooltipEl) return;
+      tooltipEl.style.display = "none";
+      tooltipEl.innerHTML = "";
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function renderChecklistHtml(checklists) {
+      if (!checklists || checklists.length === 0) {
+        return `<div class="meta">Aucune checklist</div>`;
+      }
+
+      // On affiche max 2 checklists, max 8 items chacune (pour rester léger)
+      const maxLists = 2;
+      const maxItems = 8;
+
+      let html = "";
+      for (const cl of checklists.slice(0, maxLists)) {
+        const items = (cl.checkItems || []);
+        const done = items.filter(i => i.state === "complete").length;
+        html += `<div class="meta"><strong>${escapeHtml(cl.name)}</strong> — ${done}/${items.length}</div>`;
+        html += "<ul>";
+        for (const it of items.slice(0, maxItems)) {
+          const isDone = it.state === "complete";
+          html += `<li class="${isDone ? "done" : ""}">${escapeHtml(it.name)}</li>`;
+        }
+        if (items.length > maxItems) html += `<li class="muted">+${items.length - maxItems} autres…</li>`;
+        html += "</ul>";
+      }
+      if (checklists.length > maxLists) {
+        html += `<div class="muted">+${checklists.length - maxLists} checklist(s) non affichée(s)…</div>`;
+      }
+      return html;
+    }
+
     async function load() {
       setError("");
 
@@ -200,41 +283,105 @@
       }
 
       setStatus("Chargement Trello…");
-      const cards = await fetchBoardCards(token);
 
+      const lists = await fetchBoardLists(token);
+      listIdToName = new Map(lists.map(l => [l.id, l.name]));
+
+      const cards = await fetchBoardCards(token);
       allEvents = cards.map(cardToEvent).filter(Boolean);
 
       rebuildLabelDropdown(allEvents);
       applyFilter();
-
       setError("");
     }
 
-    // =========================
-    // Init calendar
-    // =========================
     document.addEventListener("DOMContentLoaded", () => {
       const el = document.getElementById("calendar");
 
       calendar = new FullCalendar.Calendar(el, {
-        initialView: "dayGridMonth",
-        height: "auto",
         locale: "fr",
         firstDay: 1,
+        height: "auto",
+
+        initialView: "multiMonthQuarter",
+        views: {
+          multiMonthQuarter: {
+            type: "multiMonth",
+            duration: { months: 3 },
+            buttonText: "Trimestre"
+          }
+        },
+        multiMonthMaxColumns: 3,
+        showNonCurrentDates: false,
+        fixedWeekCount: false,
+        weekNumbers: true,
 
         headerToolbar: {
           left: "prev,next today",
           center: "title",
-          right: "dayGridMonth,timeGridWeek,listMonth"
+          right: "multiMonthQuarter,dayGridMonth,timeGridWeek,listMonth"
         },
 
-        // Dense / large
         dayMaxEvents: true,
         eventDisplay: "block",
 
         eventClick(info) {
           info.jsEvent.preventDefault();
           if (info.event.url) window.open(info.event.url, "_blank", "noopener,noreferrer");
+        },
+
+        // ✅ Survol : tooltip + checklists lazy-loaded
+        eventMouseEnter: async (info) => {
+          const token = getToken();
+          if (!token) return;
+
+          const cardId = info.event.id;
+          const tt = ensureTooltip();
+
+          const listName = info.event.extendedProps.listName || "";
+          tt.innerHTML = `
+            <h4>${escapeHtml(info.event.title)}</h4>
+            <div class="meta">${escapeHtml(listName)}</div>
+            <div class="meta">Chargement des checklists…</div>
+          `;
+          tt.style.display = "block";
+          // Position initiale
+          if (info.jsEvent) moveTooltip(info.jsEvent);
+
+          // Fetch + cache
+          try {
+            if (!checklistCache.has(cardId)) {
+              checklistCache.set(cardId, { loaded: false, checklists: [] });
+            }
+
+            const cached = checklistCache.get(cardId);
+            if (!cached.loaded) {
+              const data = await fetchCardChecklists(token, cardId);
+              cached.checklists = data;
+              cached.loaded = true;
+            }
+
+            // Si on est toujours sur la même carte au survol, update tooltip
+            tt.innerHTML = `
+              <h4>${escapeHtml(info.event.title)}</h4>
+              <div class="meta">${escapeHtml(listName)}</div>
+              ${renderChecklistHtml(checklistCache.get(cardId).checklists)}
+            `;
+          } catch (e) {
+            tt.innerHTML = `
+              <h4>${escapeHtml(info.event.title)}</h4>
+              <div class="meta">${escapeHtml(listName)}</div>
+              <div class="danger">Impossible de charger les checklists</div>
+            `;
+          }
+        },
+
+        eventMouseLeave: () => {
+          hideTooltip();
+        },
+
+        eventMouseMove: (info) => {
+          if (info.jsEvent) moveTooltip(info.jsEvent);
         }
       });
 
@@ -260,7 +407,6 @@
         load().catch(err => { setError(err.message); setStatus(""); });
       });
 
-      // Auto-load si token déjà présent
       load().catch(err => { setError(err.message); setStatus(""); });
     });
   </script>
