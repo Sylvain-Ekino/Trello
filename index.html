@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trello → Calendrier</title>
+
+  <!-- FullCalendar -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
+
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    header {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+      padding: 10px 14px; border-bottom: 1px solid #e5e7eb; background: #fff;
+    }
+    #calendar {
+      padding: 10px 14px;
+      max-width: 1800px; /* vue très large */
+      margin: 0 auto;
+    }
+    .pill { display: inline-flex; align-items: center; gap: 8px; }
+    select, button, input {
+      padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff;
+    }
+    .muted { color: #6b7280; font-size: 13px; }
+    .danger { color: #b91c1c; font-size: 13px; }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="pill">
+      <strong>Filtrer par tag :</strong>
+      <select id="labelFilter">
+        <option value="__ALL__">Tous</option>
+      </select>
+    </div>
+
+    <button id="refreshBtn">Rafraîchir</button>
+    <button id="logoutBtn" title="Oublier le token stocké sur ce navigateur">Oublier le token</button>
+
+    <span class="muted" id="status"></span>
+    <span class="danger" id="error"></span>
+  </header>
+
+  <div id="calendar"></div>
+
+  <script>
+    // ===================
