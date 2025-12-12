@@ -26,17 +26,11 @@
 
     /* Tooltip */
     .tt {
-      position: fixed;
-      z-index: 9999;
-      max-width: 420px;
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
+      position: fixed; z-index: 9999; max-width: 420px;
+      background: white; border: 1px solid #e5e7eb; border-radius: 12px;
       box-shadow: 0 10px 30px rgba(0,0,0,.12);
-      padding: 10px 12px;
-      font-size: 13px;
-      line-height: 1.35;
-      pointer-events: none; /* n'interfère pas avec le survol */
+      padding: 10px 12px; font-size: 13px; line-height: 1.35;
+      pointer-events: none;
     }
     .tt h4 { margin: 0 0 6px 0; font-size: 13px; }
     .tt .meta { color: #6b7280; margin-bottom: 8px; }
@@ -75,17 +69,31 @@
       boardId: "6490c5416cea9255ba3b0383"
     };
 
-    const CARD_FIELDS = "name,due,start,closed,url,idLabels,labels,idList";
     const API_BASE = "https://api.trello.com/1";
+    const CARD_FIELDS = "name,due,start,closed,url,idLabels,labels,idList";
+
+    const DONE_LIST_NAMES = new Set(["🎉 Terminé"]);
+
+    const TRELLO_LABEL_COLOR_TO_HEX = {
+      green:  "#22c55e",
+      yellow: "#eab308",
+      orange: "#f97316",
+      red:    "#ef4444",
+      purple: "#a855f7",
+      blue:   "#3b82f6",
+      sky:    "#0ea5e9",
+      lime:   "#84cc16",
+      pink:   "#ec4899",
+      black:  "#111827"
+    };
 
     let allEvents = [];
     let calendar;
     let listIdToName = new Map();
+    let doneListIds = new Set();
+    let labelIdToHex = new Map(); // <-- pour colorer homogènement au filtre
 
-    // Cache checklists: cardId -> { loaded: bool, items: [...] }
     const checklistCache = new Map();
-
-    // Tooltip instance
     let tooltipEl = null;
 
     function setStatus(msg) { document.getElementById("status").textContent = msg || ""; }
@@ -115,10 +123,7 @@
 
     async function fetchBoardLists(token) {
       const url = `${API_BASE}/boards/${encodeURIComponent(TRELLO.boardId)}/lists?` + qs({
-        key: TRELLO.key,
-        token,
-        fields: "name",
-        filter: "open"
+        key: TRELLO.key, token, fields: "name", filter: "open"
       });
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Trello API error (${res.status})`);
@@ -127,44 +132,75 @@
 
     async function fetchBoardCards(token) {
       const url = `${API_BASE}/boards/${encodeURIComponent(TRELLO.boardId)}/cards?` + qs({
-        key: TRELLO.key,
-        token,
-        fields: CARD_FIELDS,
-        filter: "open"
+        key: TRELLO.key, token, fields: CARD_FIELDS, filter: "open"
       });
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Trello API error (${res.status})`);
       return res.json();
     }
 
-    // ✅ Checklists d'une carte
     async function fetchCardChecklists(token, cardId) {
       const url = `${API_BASE}/cards/${encodeURIComponent(cardId)}/checklists?` + qs({
-        key: TRELLO.key,
-        token
+        key: TRELLO.key, token
       });
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Trello API error (${res.status})`);
       return res.json();
+    }
+
+    function isDoneListName(name) { return DONE_LIST_NAMES.has(name); }
+
+    function pickEventColorFromLabels(labels) {
+      const firstColored = (labels || []).find(l => l && l.color);
+      if (!firstColored) return null;
+      return TRELLO_LABEL_COLOR_TO_HEX[firstColored.color] || null;
+    }
+
+    // FullCalendar attend end "exclusive" pour les all-day.
+    // On rend l’event all-day pour un rendu dense “planning”.
+    function makeExclusiveEnd(dueIso) {
+      const d = new Date(dueIso);
+      // on ajoute 1 jour pour couvrir le jour du "due" en all-day
+      d.setDate(d.getDate() + 1);
+      return d.toISOString();
     }
 
     function cardToEvent(card) {
-      const start = card.due || card.start;
-      if (!start) return null;
+      if (doneListIds.has(card.idList)) return null;
+
+      // Si pas de date du tout => on n'affiche pas
+      if (!card.start && !card.due) return null;
 
       const listName = listIdToName.get(card.idList) || "Liste";
       const title = `[${listName}] ${card.name}`;
+
+      const labels = (card.labels || []).map(l => ({ id: l.id, name: l.name, color: l.color }));
+      const baseColor = pickEventColorFromLabels(labels);
+
+      // ✅ Étendre start -> due si les deux existent
+      let start = card.start || card.due;
+      let end = null;
+
+      if (card.start && card.due) {
+        // end exclusif (all-day)
+        end = makeExclusiveEnd(card.due);
+      }
 
       return {
         id: card.id,
         title,
         start,
+        end: end || undefined,
         allDay: true,
         url: card.url,
+        backgroundColor: baseColor || undefined,
+        borderColor: baseColor || undefined,
+        textColor: baseColor ? "#ffffff" : undefined,
         extendedProps: {
           labelIds: card.idLabels || [],
-          labels: (card.labels || []).map(l => ({ id: l.id, name: l.name, color: l.color })),
-          listName
+          labels,
+          listName,
+          baseColor: baseColor || null
         }
       };
     }
@@ -179,12 +215,19 @@
         }
       }
 
-      const unique = uniqBy(labels, l => l.id).sort((a,b) => a.name.localeCompare(b.name, "fr"));
+      // Construire aussi le mapping labelId -> hex
+      labelIdToHex = new Map();
+      for (const l of labels) {
+        const hex = l.color ? (TRELLO_LABEL_COLOR_TO_HEX[l.color] || null) : null;
+        if (hex) labelIdToHex.set(l.id, hex);
+      }
+
+      const unique = uniqBy(labels, l => l.id).sort((a,b) => (a.name || "").localeCompare(b.name || "", "fr"));
       const current = select.value || "__ALL__";
 
       select.innerHTML = "";
       select.appendChild(new Option("Tous", "__ALL__"));
-      for (const l of unique) select.appendChild(new Option(l.name, l.id));
+      for (const l of unique) select.appendChild(new Option(l.name || "(Sans nom)", l.id));
 
       select.value = [...select.options].some(o => o.value === current) ? current : "__ALL__";
     }
@@ -192,16 +235,31 @@
     function applyFilter() {
       const labelId = document.getElementById("labelFilter").value;
 
-      const filtered = (labelId === "__ALL__")
+      let filtered = (labelId === "__ALL__")
         ? allEvents
         : allEvents.filter(ev => (ev.extendedProps.labelIds || []).includes(labelId));
+
+      // ✅ Couleur homogène = couleur du tag filtré
+      if (labelId !== "__ALL__") {
+        const hex = labelIdToHex.get(labelId) || null;
+        if (hex) {
+          filtered = filtered.map(ev => ({
+            ...ev,
+            backgroundColor: hex,
+            borderColor: hex,
+            textColor: "#ffffff"
+          }));
+        }
+      } else {
+        // retour à la couleur "base" par carte (déjà dans allEvents)
+      }
 
       calendar.removeAllEvents();
       calendar.addEventSource(filtered);
       setStatus(`${filtered.length} tâche(s) affichée(s)`);
     }
 
-    // ---------- Tooltip helpers ----------
+    // ---------- Tooltip ----------
     function ensureTooltip() {
       if (tooltipEl) return tooltipEl;
       tooltipEl = document.createElement("div");
@@ -217,7 +275,6 @@
       let x = mouseEvent.clientX + pad;
       let y = mouseEvent.clientY + pad;
 
-      // keep in viewport
       const rect = tooltipEl.getBoundingClientRect();
       const vw = window.innerWidth;
       const vh = window.innerHeight;
@@ -249,9 +306,8 @@
         return `<div class="meta">Aucune checklist</div>`;
       }
 
-      // On affiche max 2 checklists, max 8 items chacune (pour rester léger)
       const maxLists = 2;
-      const maxItems = 8;
+      const maxItems = 10;
 
       let html = "";
       for (const cl of checklists.slice(0, maxLists)) {
@@ -286,6 +342,7 @@
 
       const lists = await fetchBoardLists(token);
       listIdToName = new Map(lists.map(l => [l.id, l.name]));
+      doneListIds = new Set(lists.filter(l => isDoneListName(l.name)).map(l => l.id));
 
       const cards = await fetchBoardCards(token);
       allEvents = cards.map(cardToEvent).filter(Boolean);
@@ -305,11 +362,7 @@
 
         initialView: "multiMonthQuarter",
         views: {
-          multiMonthQuarter: {
-            type: "multiMonth",
-            duration: { months: 3 },
-            buttonText: "Trimestre"
-          }
+          multiMonthQuarter: { type: "multiMonth", duration: { months: 3 }, buttonText: "Trimestre" }
         },
         multiMonthMaxColumns: 3,
         showNonCurrentDates: false,
@@ -330,42 +383,35 @@
           if (info.event.url) window.open(info.event.url, "_blank", "noopener,noreferrer");
         },
 
-        // ✅ Survol : tooltip + checklists lazy-loaded
         eventMouseEnter: async (info) => {
           const token = getToken();
           if (!token) return;
 
           const cardId = info.event.id;
           const tt = ensureTooltip();
-
           const listName = info.event.extendedProps.listName || "";
+
           tt.innerHTML = `
             <h4>${escapeHtml(info.event.title)}</h4>
             <div class="meta">${escapeHtml(listName)}</div>
             <div class="meta">Chargement des checklists…</div>
           `;
           tt.style.display = "block";
-          // Position initiale
           if (info.jsEvent) moveTooltip(info.jsEvent);
 
-          // Fetch + cache
           try {
-            if (!checklistCache.has(cardId)) {
-              checklistCache.set(cardId, { loaded: false, checklists: [] });
-            }
-
+            if (!checklistCache.has(cardId)) checklistCache.set(cardId, { loaded: false, checklists: [] });
             const cached = checklistCache.get(cardId);
+
             if (!cached.loaded) {
-              const data = await fetchCardChecklists(token, cardId);
-              cached.checklists = data;
+              cached.checklists = await fetchCardChecklists(token, cardId);
               cached.loaded = true;
             }
 
-            // Si on est toujours sur la même carte au survol, update tooltip
             tt.innerHTML = `
               <h4>${escapeHtml(info.event.title)}</h4>
               <div class="meta">${escapeHtml(listName)}</div>
-              ${renderChecklistHtml(checklistCache.get(cardId).checklists)}
+              ${renderChecklistHtml(cached.checklists)}
             `;
           } catch (e) {
             tt.innerHTML = `
@@ -375,14 +421,8 @@
             `;
           }
         },
-
-        eventMouseLeave: () => {
-          hideTooltip();
-        },
-
-        eventMouseMove: (info) => {
-          if (info.jsEvent) moveTooltip(info.jsEvent);
-        }
+        eventMouseLeave: hideTooltip,
+        eventMouseMove: (info) => { if (info.jsEvent) moveTooltip(info.jsEvent); }
       });
 
       calendar.render();
@@ -398,10 +438,7 @@
       document.getElementById("saveTokenBtn").addEventListener("click", () => {
         const input = document.getElementById("tokenInput");
         const token = input.value.trim();
-        if (!token) {
-          setError("Token manquant.");
-          return;
-        }
+        if (!token) { setError("Token manquant."); return; }
         saveToken(token);
         input.value = "";
         load().catch(err => { setError(err.message); setStatus(""); });
