@@ -18,6 +18,11 @@
       --shadow: 0 20px 50px rgba(2,6,23,.08);
       --shadow-sm: 0 8px 20px rgba(2,6,23,.08);
       --radius: 18px;
+
+      --gantt-row-h: 34px;
+      --gantt-bar-h: 18px;
+      --gantt-grid: rgba(15,23,42,.06);
+      --gantt-grid-strong: rgba(15,23,42,.10);
     }
 
     *{ box-sizing: border-box; }
@@ -92,6 +97,7 @@
       cursor: pointer;
       box-shadow: var(--shadow-sm);
       transition: transform .08s ease, box-shadow .08s ease, background .08s ease;
+      user-select: none;
     }
     .btn:hover{ transform: translateY(-1px); box-shadow: 0 14px 30px rgba(2,6,23,.10); }
     .btn:active{ transform: translateY(0); box-shadow: var(--shadow-sm); }
@@ -150,7 +156,31 @@
     .panel-head .title{
       font-weight: 900;
       letter-spacing: .2px;
+      display:flex;
+      align-items:center;
+      gap: 10px;
     }
+    .seg{
+      display:inline-flex;
+      border: 1px solid rgba(229,231,235,.95);
+      background: rgba(246,247,251,.55);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .seg button{
+      border:0;
+      background: transparent;
+      padding: 9px 11px;
+      font-weight: 900;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .seg button.active{
+      color: var(--text);
+      background: rgba(255,255,255,.92);
+    }
+
     .toggle{
       display:flex; align-items:center; gap: 8px;
       color: var(--muted); font-weight: 700; font-size: 13px;
@@ -159,7 +189,7 @@
     .toggle input{ transform: translateY(1px); }
 
     #calendar{
-      padding: 10px 10px 14px;
+      padding: 10px 10px 0;
     }
 
     /* FullCalendar modern tweaks */
@@ -234,6 +264,226 @@
     .tt ul{ margin: 0; padding-left: 18px; }
     .tt li{ margin: 2px 0; }
     .tt .done{ text-decoration: line-through; color: var(--muted); }
+
+    /* ===== GANTT ===== */
+    #gantt{
+      padding: 10px 10px 14px;
+      display:none;
+    }
+    .ganttmode #gantt{ display:block; }
+    .ganttmode #calendar .fc-view-harness{ display:none; } /* garde toolbar FullCalendar */
+
+    .gantt-shell{
+      border: 1px solid rgba(229,231,235,.95);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      background: rgba(255,255,255,.9);
+    }
+
+    .gantt-top{
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(229,231,235,.95);
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .gantt-top .range{
+      font-weight: 900;
+      letter-spacing: .2px;
+    }
+    .gantt-top .hint{
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .gantt-grid{
+      position: relative;
+      display:grid;
+      grid-template-columns: minmax(220px, 360px) 1fr;
+      min-height: 80px;
+    }
+    .compact .gantt-grid{ grid-template-columns: minmax(200px, 320px) 1fr; }
+
+    .gantt-left{
+      border-right: 1px solid rgba(229,231,235,.95);
+      background: linear-gradient(180deg, rgba(246,247,251,.65), rgba(255,255,255,.9));
+    }
+    .gantt-right{
+      position: relative;
+      background:
+        repeating-linear-gradient(
+          to right,
+          var(--gantt-grid) 0px,
+          var(--gantt-grid) 1px,
+          transparent 1px,
+          transparent var(--gantt-day-w, 26px)
+        );
+    }
+    .gantt-right::before{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        repeating-linear-gradient(
+          to right,
+          transparent 0,
+          transparent calc(var(--gantt-week-w, 182px) - 1px),
+          var(--gantt-grid-strong) calc(var(--gantt-week-w, 182px) - 1px),
+          var(--gantt-grid-strong) var(--gantt-week-w, 182px)
+        );
+      pointer-events:none;
+      opacity:.8;
+    }
+
+    .gantt-head{
+      display:grid;
+      grid-template-columns: minmax(220px, 360px) 1fr;
+      border-bottom: 1px solid rgba(229,231,235,.95);
+      background: rgba(255,255,255,.92);
+    }
+    .gantt-head .hl{
+      padding: 10px 12px;
+      font-weight: 900;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      border-right: 1px solid rgba(229,231,235,.95);
+    }
+    .gantt-head .hr{
+      position: relative;
+      padding: 10px 12px;
+      overflow:hidden;
+    }
+    .ticks{
+      display:flex;
+      gap: 0;
+      align-items:center;
+      height: 18px;
+      position: relative;
+    }
+    .tick{
+      width: var(--gantt-week-w, 182px);
+      min-width: var(--gantt-week-w, 182px);
+      color: var(--muted);
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      opacity:.9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 8px;
+    }
+
+    .gantt-rows{
+      display:block;
+      max-height: min(68vh, 900px);
+      overflow:auto;
+    }
+
+    .gantt-row{
+      display:grid;
+      grid-template-columns: minmax(220px, 360px) 1fr;
+      border-bottom: 1px solid rgba(229,231,235,.75);
+      min-height: var(--gantt-row-h);
+    }
+    .compact{
+      --gantt-row-h: 28px;
+      --gantt-bar-h: 16px;
+    }
+
+    .gantt-row .lcell{
+      padding: 8px 12px;
+      border-right: 1px solid rgba(229,231,235,.75);
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .lcell .name{
+      font-weight: 900;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lcell .meta{
+      font-weight: 800;
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lcell .stack{
+      display:flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width:0;
+    }
+
+    .gantt-row .rcell{
+      position: relative;
+      padding: 0;
+    }
+
+    .bar{
+      position:absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      height: var(--gantt-bar-h);
+      border-radius: 10px;
+      border: 1px solid rgba(15,23,42,.10);
+      box-shadow: 0 10px 20px rgba(2,6,23,.10);
+      display:flex;
+      align-items:center;
+      padding: 0 8px;
+      gap: 8px;
+      cursor: pointer;
+      min-width: 10px;
+      overflow:hidden;
+    }
+    .bar:hover{
+      filter: brightness(1.03);
+      box-shadow: 0 14px 28px rgba(2,6,23,.14);
+    }
+    .bar .t{
+      font-weight: 900;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .milestone{
+      position:absolute;
+      top: 50%;
+      transform: translate(-50%, -50%) rotate(45deg);
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      border: 1px solid rgba(15,23,42,.10);
+      box-shadow: 0 10px 20px rgba(2,6,23,.10);
+      cursor:pointer;
+    }
+    .milestone:hover{
+      filter: brightness(1.05);
+      box-shadow: 0 14px 28px rgba(2,6,23,.14);
+    }
+
+    .todayLine{
+      position:absolute;
+      top:0; bottom:0;
+      width: 2px;
+      background: rgba(239,68,68,.75);
+      box-shadow: 0 0 0 3px rgba(239,68,68,.10);
+      pointer-events:none;
+    }
   </style>
 </head>
 
@@ -271,10 +521,19 @@
   <div class="wrap">
     <div class="panel">
       <div class="panel-head">
-        <div class="title">Vue trimestre</div>
+        <div class="title">
+          <span>Vue trimestre</span>
+          <div class="seg" role="tablist" aria-label="Mode d'affichage">
+            <button id="modeCalendarBtn" class="active" type="button">Calendrier</button>
+            <button id="modeGanttBtn" type="button">Gantt</button>
+          </div>
+        </div>
+
         <label class="toggle"><input type="checkbox" id="compactToggle" /> Mode compact</label>
       </div>
+
       <div id="calendar"></div>
+      <div id="gantt"></div>
     </div>
   </div>
 
@@ -310,6 +569,10 @@
     const checklistCache = new Map();
     let tooltipEl = null;
 
+    const VIEW_MODE_KEY = "tc_view_mode";
+    function getViewMode(){ return localStorage.getItem(VIEW_MODE_KEY) || "calendar"; }
+    function setViewMode(mode){ localStorage.setItem(VIEW_MODE_KEY, mode); }
+
     function setStatus(msg) { document.getElementById("status").textContent = msg || ""; }
     function setError(msg) { document.getElementById("error").textContent = msg || ""; }
 
@@ -321,6 +584,7 @@
       calendar?.removeAllEvents();
       setError("");
       setStatus("Token supprimé sur ce navigateur.");
+      renderGanttIfNeeded();
     }
 
     function qs(params) { return new URLSearchParams(params).toString(); }
@@ -457,6 +721,8 @@
       calendar.removeAllEvents();
       calendar.addEventSource(filtered);
       setStatus(`${filtered.length} tâche(s) affichée(s)`);
+
+      renderGanttIfNeeded();
     }
 
     // Tooltip
@@ -532,6 +798,7 @@
       if (!token) {
         setStatus("Renseigne ton token Trello puis clique sur “Valider”.");
         calendar?.removeAllEvents();
+        renderGanttIfNeeded(true);
         return;
       }
 
@@ -547,6 +814,275 @@
       rebuildLabelDropdown(allEvents);
       applyFilter();
       setError("");
+    }
+
+    // ===== GANTT rendering =====
+    function clampDate(d, min, max){
+      const t = d.getTime();
+      if (t < min.getTime()) return new Date(min);
+      if (t > max.getTime()) return new Date(max);
+      return d;
+    }
+
+    function startOfDay(d){
+      const x = new Date(d);
+      x.setHours(0,0,0,0);
+      return x;
+    }
+
+    function diffDays(a, b){
+      const ms = startOfDay(b).getTime() - startOfDay(a).getTime();
+      return Math.round(ms / 86400000);
+    }
+
+    function formatRange(start, end){
+      const fmt = new Intl.DateTimeFormat("fr", { day:"2-digit", month:"short", year:"numeric" });
+      const s = fmt.format(start);
+      // end FullCalendar is exclusive for ranges; show inclusive end-1 day for humans
+      const eInc = new Date(end);
+      eInc.setDate(eInc.getDate() - 1);
+      const e = fmt.format(eInc);
+      return `${s} → ${e}`;
+    }
+
+    function getFilteredEventsFromCalendar(){
+      const sources = calendar.getEvents();
+      // Convert FullCalendar EventApi -> plain object compatible with current rendering
+      return sources.map(ev => ({
+        id: ev.id,
+        title: ev.title,
+        start: ev.startStr,
+        end: ev.endStr || undefined,
+        allDay: ev.allDay,
+        url: ev.url,
+        backgroundColor: ev.backgroundColor,
+        borderColor: ev.borderColor,
+        textColor: ev.textColor,
+        extendedProps: ev.extendedProps
+      }));
+    }
+
+    function computeScaleVars(totalDays){
+      // Compact but readable: ~26px/jour desktop, clamp responsive
+      const dayW = Math.max(14, Math.min(30, Math.floor((window.innerWidth - 520) / Math.max(28, totalDays))));
+      const weekW = dayW * 7;
+      return { dayW, weekW };
+    }
+
+    function weekTicks(rangeStart, rangeEnd){
+      // ticks every monday
+      const ticks = [];
+      const d = startOfDay(rangeStart);
+      // shift to next Monday (1)
+      const day = d.getDay(); // 0=Sun..6=Sat
+      const deltaToMon = (day === 0) ? 1 : (day <= 1 ? (1 - day) : (8 - day));
+      d.setDate(d.getDate() + deltaToMon);
+
+      const fmt = new Intl.DateTimeFormat("fr", { day:"2-digit", month:"short" });
+      while (d < rangeEnd) {
+        ticks.push(fmt.format(d));
+        d.setDate(d.getDate() + 7);
+      }
+      return ticks;
+    }
+
+    function renderGanttIfNeeded(forceEmpty=false){
+      const mode = getViewMode();
+      document.body.classList.toggle("ganttmode", mode === "gantt");
+
+      const calBtn = document.getElementById("modeCalendarBtn");
+      const ganttBtn = document.getElementById("modeGanttBtn");
+      calBtn.classList.toggle("active", mode !== "gantt");
+      ganttBtn.classList.toggle("active", mode === "gantt");
+
+      const ganttEl = document.getElementById("gantt");
+      if (mode !== "gantt") {
+        ganttEl.innerHTML = "";
+        return;
+      }
+
+      const token = getToken();
+      if (forceEmpty || !token) {
+        ganttEl.innerHTML = `
+          <div class="gantt-shell">
+            <div class="gantt-top">
+              <div class="range">Gantt</div>
+              <div class="hint">Renseigne un token pour afficher les tâches.</div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const view = calendar.view;
+      const rangeStart = startOfDay(view.currentStart);
+      const rangeEnd = startOfDay(view.currentEnd); // exclusive
+      const totalDays = Math.max(1, diffDays(rangeStart, rangeEnd));
+
+      const { dayW, weekW } = computeScaleVars(totalDays);
+
+      const events = getFilteredEventsFromCalendar()
+        .filter(ev => ev.start)
+        .map(ev => {
+          const s = startOfDay(new Date(ev.start));
+          const e = ev.end ? startOfDay(new Date(ev.end)) : null; // end is exclusive if present
+          return { ...ev, _s: s, _e: e };
+        })
+        .sort((a,b) => a._s - b._s);
+
+      const ticks = weekTicks(rangeStart, rangeEnd);
+      const rangeLabel = formatRange(rangeStart, rangeEnd);
+
+      const today = startOfDay(new Date());
+      const todayOffset = diffDays(rangeStart, today);
+      const showToday = today >= rangeStart && today < rangeEnd;
+
+      // Build rows
+      let rowsHtml = "";
+      for (const ev of events) {
+        const listName = ev.extendedProps?.listName || "";
+        const color = ev.backgroundColor || ev.extendedProps?.baseColor || "#475569";
+        const textColor = ev.textColor || "#ffffff";
+
+        const hasRange = !!(ev._s && ev._e);
+        const isBar = hasRange && ev._e > ev._s;
+        const isMilestone = !isBar;
+
+        // Clamp within visible range
+        let s = clampDate(ev._s, rangeStart, new Date(rangeEnd.getTime() - 86400000));
+        let e = ev._e ? clampDate(new Date(ev._e.getTime() - 86400000), rangeStart, new Date(rangeEnd.getTime() - 86400000)) : s;
+
+        const leftDays = diffDays(rangeStart, s);
+        const rightDays = diffDays(rangeStart, e);
+
+        const leftPx = leftDays * dayW;
+        const widthPx = Math.max(dayW, (rightDays - leftDays + 1) * dayW);
+
+        const safeTitle = escapeHtml(ev.title);
+        const safeList = escapeHtml(listName);
+
+        rowsHtml += `
+          <div class="gantt-row" data-id="${escapeHtml(ev.id)}" data-url="${escapeHtml(ev.url || "")}">
+            <div class="lcell">
+              <div class="stack">
+                <div class="name" title="${safeTitle}">${safeTitle}</div>
+                <div class="meta" title="${safeList}">${safeList}</div>
+              </div>
+            </div>
+            <div class="rcell">
+              ${
+                isMilestone
+                  ? `<div class="milestone" style="left:${leftPx + (dayW/2)}px; background:${color};" title="${safeTitle}"></div>`
+                  : `<div class="bar" style="left:${leftPx}px; width:${widthPx}px; background:${color}; color:${textColor}; border-color:${color};" title="${safeTitle}">
+                      <span class="t">${safeTitle}</span>
+                    </div>`
+              }
+            </div>
+          </div>
+        `;
+      }
+
+      ganttEl.innerHTML = `
+        <div class="gantt-shell" style="--gantt-day-w:${dayW}px; --gantt-week-w:${weekW}px;">
+          <div class="gantt-top">
+            <div>
+              <div class="range">Gantt • ${escapeHtml(rangeLabel)}</div>
+              <div class="hint">${events.length} tâche(s) dans la plage visible • Survol = checklists</div>
+            </div>
+            <div class="hint">Astuce: utilise Prev/Next/Today en haut (toolbar FullCalendar)</div>
+          </div>
+
+          <div class="gantt-head">
+            <div class="hl">Tâches</div>
+            <div class="hr">
+              <div class="ticks">
+                ${ticks.map(t => `<div class="tick">${escapeHtml(t)}</div>`).join("")}
+              </div>
+            </div>
+          </div>
+
+          <div class="gantt-grid">
+            <div class="gantt-left"></div>
+            <div class="gantt-right">
+              ${showToday ? `<div class="todayLine" style="left:${(todayOffset * dayW) + (dayW/2)}px"></div>` : ``}
+            </div>
+          </div>
+
+          <div class="gantt-rows">
+            ${rowsHtml || `<div style="padding:14px 12px; color:var(--muted); font-weight:800;">Aucune tâche sur cette période.</div>`}
+          </div>
+        </div>
+      `;
+
+      // Attach interactions (click + tooltip)
+      attachGanttInteractions();
+    }
+
+    function attachGanttInteractions(){
+      const ganttEl = document.getElementById("gantt");
+      const token = getToken();
+      if (!token) return;
+
+      // event delegation
+      ganttEl.onmousemove = (e) => { if (e) moveTooltip(e); };
+
+      ganttEl.onclick = (e) => {
+        const row = e.target.closest(".gantt-row");
+        if (!row) return;
+        const url = row.getAttribute("data-url");
+        if (url) window.open(url, "_blank", "noopener,noreferrer");
+      };
+
+      ganttEl.onmouseenter = (e) => { /* noop */ };
+
+      ganttEl.onmouseleave = (e) => {
+        // If leaving gantt container entirely
+        if (e.target === ganttEl) hideTooltip();
+      };
+
+      ganttEl.onmouseover = async (e) => {
+        const row = e.target.closest(".gantt-row");
+        if (!row) return;
+
+        const cardId = row.getAttribute("data-id");
+        if (!cardId) return;
+
+        const ev = calendar.getEventById(cardId);
+        if (!ev) return;
+
+        const tt = ensureTooltip();
+        const listName = ev.extendedProps?.listName || "";
+
+        tt.innerHTML = `
+          <h4>${escapeHtml(ev.title)}</h4>
+          <div class="meta">${escapeHtml(listName)}</div>
+          <div class="meta">Chargement des checklists…</div>
+        `;
+        tt.style.display = "block";
+        if (e) moveTooltip(e);
+
+        try {
+          if (!checklistCache.has(cardId)) checklistCache.set(cardId, { loaded: false, checklists: [] });
+          const cached = checklistCache.get(cardId);
+
+          if (!cached.loaded) {
+            cached.checklists = await fetchCardChecklists(token, cardId);
+            cached.loaded = true;
+          }
+
+          tt.innerHTML = `
+            <h4>${escapeHtml(ev.title)}</h4>
+            <div class="meta">${escapeHtml(listName)}</div>
+            ${renderChecklistHtml(cached.checklists)}
+          `;
+        } catch (err) {
+          tt.innerHTML = `
+            <h4>${escapeHtml(ev.title)}</h4>
+            <div class="meta">${escapeHtml(listName)}</div>
+            <div class="error">Impossible de charger les checklists</div>
+          `;
+        }
+      };
     }
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -574,6 +1110,11 @@
 
         dayMaxEvents: true,
         eventDisplay: "block",
+
+        datesSet: () => {
+          // When navigating prev/next/today, keep gantt synced
+          renderGanttIfNeeded();
+        },
 
         eventClick(info) {
           info.jsEvent.preventDefault();
@@ -624,6 +1165,21 @@
 
       calendar.render();
 
+      // Mode buttons
+      const modeCalendarBtn = document.getElementById("modeCalendarBtn");
+      const modeGanttBtn = document.getElementById("modeGanttBtn");
+
+      function syncModeUI(){
+        const mode = getViewMode();
+        document.body.classList.toggle("ganttmode", mode === "gantt");
+        modeCalendarBtn.classList.toggle("active", mode !== "gantt");
+        modeGanttBtn.classList.toggle("active", mode === "gantt");
+        renderGanttIfNeeded();
+      }
+
+      modeCalendarBtn.addEventListener("click", () => { setViewMode("calendar"); syncModeUI(); });
+      modeGanttBtn.addEventListener("click", () => { setViewMode("gantt"); syncModeUI(); });
+
       document.getElementById("labelFilter").addEventListener("change", applyFilter);
 
       document.getElementById("refreshBtn").addEventListener("click", () =>
@@ -643,7 +1199,18 @@
 
       document.getElementById("compactToggle").addEventListener("change", (e) => {
         document.body.classList.toggle("compact", !!e.target.checked);
+        renderGanttIfNeeded();
       });
+
+      // On resize, keep gantt scale responsive
+      window.addEventListener("resize", () => {
+        // light debounce
+        clearTimeout(window.__ganttResizeT);
+        window.__ganttResizeT = setTimeout(() => renderGanttIfNeeded(), 120);
+      });
+
+      // Restore mode on boot
+      syncModeUI();
 
       load().catch(err => { setError(err.message); setStatus(""); });
     });
