@@ -1,68 +1,209 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Trello Gantt</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Trello Gantt</title>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.css">
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
 
-<style>
-:root{
-  --bg:#f6f7fb;--border:#e5e7eb;
-  --left:230px;--lane:18px;--gap:6px;--pad:8px;--bar:14px;
-}
-*{box-sizing:border-box}
-body{margin:0;font-family:system-ui;background:var(--bg)}
-.container{max-width:1280px;margin:auto;padding:0 10px}
-
-.topbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border)}
-.controls{display:flex;gap:6px;flex-wrap:wrap;padding:6px 0}
-.chip,.seg,.btn,.token{border:1px solid var(--border);background:#fff;border-radius:999px;padding:4px 6px;font-weight:700}
-.chip input,.chip select,.token input{border:0;outline:0;font-weight:700}
-.seg button{border:0;background:none;font-weight:800;opacity:.5}
-.seg button.active{opacity:1}
-.btn{cursor:pointer}
-.token{display:flex;gap:4px}
-
-.panel{margin-top:6px;border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden}
-
-#calendar{padding:4px 6px;border-bottom:1px solid var(--border)}
-.fc .fc-view-harness{display:none}
-.fc .fc-toolbar-title{font-size:13px;font-weight:900}
-.fc .fc-button{padding:4px 6px!important;font-size:11px!important}
-
-#gantt{padding:6px}
-
-.shell{border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.head{display:grid;grid-template-columns:var(--left) 1fr;border-bottom:1px solid var(--border)}
-.hl{border-right:1px solid var(--border);padding:4px 6px;font-size:10px;font-weight:800;color:#64748b}
-.hr{padding:4px 6px}
-.ticks{display:flex}
-.tick{width:var(--week);font-size:10px;font-weight:800;color:#64748b;white-space:nowrap}
-
-.scroll{display:grid;grid-template-columns:var(--left) 1fr;max-height:75vh}
-.left{border-right:1px solid var(--border);overflow:auto}
-.right{position:relative;overflow:auto;
-  background:repeating-linear-gradient(to right,#0001 0,#0001 1px,transparent 1px,transparent var(--day))}
-.right::before{content:"";position:absolute;inset:0;
-  background:repeating-linear-gradient(to right,transparent 0,transparent calc(var(--week)-1px),#0002 calc(var(--week)-1px),#0002 var(--week));
-  pointer-events:none}
-
-.list{border-bottom:1px solid var(--border);padding:6px;font-size:12px;font-weight:800;cursor:pointer}
-.lane{position:relative;border-bottom:1px solid var(--border)}
-.inner{position:absolute;inset:0;padding:var(--pad) 0}
-
-.bar{position:absolute;height:var(--bar);border-radius:8px;font-size:11px;font-weight:800;
-  padding:0 6px;white-space:nowrap;overflow:hidden;cursor:pointer}
-.milestone{position:absolute;width:10px;height:10px;transform:translate(-50%,-50%) rotate(45deg);border-radius:2px;cursor:pointer}
-
-.tt{position:fixed;z-index:999;background:#fff;border:1px solid var(--border);
-  border-radius:10px;padding:8px;font-size:12px;box-shadow:0 20px 50px #0003;max-width:420px;pointer-events:none}
-.tt h4{margin:0 0 4px;font-size:12px}
-.tt .done{text-decoration:line-through;color:#64748b}
-</style>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --border: #e5e7eb;
+      --left: 230px;
+      --lane: 18px;
+      --gap: 6px;
+      --pad: 8px;
+      --bar: 14px;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui;
+      background: var(--bg);
+    }
+    .container {
+      max-width: 1280px;
+      margin: auto;
+      padding: 0 10px;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+    }
+    .controls {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 6px 0;
+    }
+    .chip, .seg, .btn, .token {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 999px;
+      padding: 4px 6px;
+      font-weight: 700;
+    }
+    .chip input, .chip select, .token input {
+      border: 0;
+      outline: 0;
+      font-weight: 700;
+    }
+    .seg button {
+      border: 0;
+      background: none;
+      font-weight: 800;
+      opacity: .5;
+    }
+    .seg button.active {
+      opacity: 1;
+    }
+    .btn {
+      cursor: pointer;
+    }
+    .token {
+      display: flex;
+      gap: 4px;
+    }
+    .panel {
+      margin-top: 6px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+    }
+    #calendar {
+      padding: 4px 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .fc .fc-view-harness {
+      display: none;
+    }
+    .fc .fc-toolbar-title {
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .fc .fc-button {
+      padding: 4px 6px!important;
+      font-size: 11px!important;
+    }
+    #gantt {
+      padding: 6px;
+    }
+    .shell {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .head {
+      display: grid;
+      grid-template-columns: var(--left) 1fr;
+      border-bottom: 1px solid var(--border);
+    }
+    .hl {
+      border-right: 1px solid var(--border);
+      padding: 4px 6px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #64748b;
+    }
+    .hr {
+      padding: 4px 6px;
+    }
+    .ticks {
+      display: flex;
+    }
+    .tick {
+      width: var(--week);
+      font-size: 10px;
+      font-weight: 800;
+      color: #64748b;
+      white-space: nowrap;
+    }
+    .scroll {
+      display: grid;
+      grid-template-columns: var(--left) 1fr;
+      max-height: 75vh;
+    }
+    .left {
+      border-right: 1px solid var(--border);
+      overflow: auto;
+    }
+    .right {
+      position: relative;
+      overflow: auto;
+      background: repeating-linear-gradient(to right, #0001 0, #0001 1px, transparent 1px, transparent var(--day));
+    }
+    .right::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(to right, transparent 0, transparent calc(var(--week) - 1px), #0002 calc(var(--week) - 1px), #0002 var(--week));
+      pointer-events: none;
+    }
+    .list {
+      border-bottom: 1px solid var(--border);
+      padding: 6px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .lane {
+      position: relative;
+      border-bottom: 1px solid var(--border);
+    }
+    .inner {
+      position: absolute;
+      inset: 0;
+      padding: var(--pad) 0;
+    }
+    .bar {
+      position: absolute;
+      height: var(--bar);
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      padding: 0 6px;
+      cursor: pointer;
+    }
+    .milestone {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      transform: translate(-50%, -50%) rotate(45deg);
+      border-radius: 2px;
+      cursor: pointer;
+    }
+    .tt {
+      position: fixed;
+      z-index: 999;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 12px;
+      box-shadow: 0 20px 50px #0003;
+      max-width: 420px;
+      pointer-events: none;
+    }
+    .tt h4 {
+      margin: 0 0 4px;
+      font-size: 12px;
+    }
+    .tt .done {
+      text-decoration: line-through;
+      color: #64748b;
+    }
+  </style>
 </head>
 
 <body>
@@ -71,7 +212,9 @@ body{margin:0;font-family:system-ui;background:var(--bg)}
   <div class="container">
     <div class="controls">
       <div class="chip">
-        <select id="labelFilter"><option value="__ALL__">Tags</option></select>
+        <select id="labelFilter">
+          <option value="__ALL__">Tous les tags</option>
+        </select>
       </div>
       <div class="chip"><input id="searchInput" placeholder="Recherche"/></div>
       <div class="seg">
@@ -98,160 +241,166 @@ body{margin:0;font-family:system-ui;background:var(--bg)}
 
 <script>
 /* ================= CONFIG ================= */
-const TRELLO={key:"ec995ad68de9cdaafd64b131e5fa00ec",boardId:"6490c5416cea9255ba3b0383"};
-const DONE=new Set(["🎉 Terminé"]);
-const COLORS={green:"#22c55e",yellow:"#eab308",orange:"#f97316",red:"#ef4444",
-purple:"#a855f7",blue:"#3b82f6",sky:"#0ea5e9",lime:"#84cc16",pink:"#ec4899",black:"#111827"};
+const TRELLO = { key: "ec995ad68de9cdaafd64b131e5fa00ec", boardId: "6490c5416cea9255ba3b0383" };
+const DONE = new Set(["🎉 Terminé"]);
+const COLORS = { green: "#22c55e", yellow: "#eab308", orange: "#f97316", red: "#ef4444", purple: "#a855f7", blue: "#3b82f6", sky: "#0ea5e9", lime: "#84cc16", pink: "#ec4899", black: "#111827" };
 
-const API="https://api.trello.com/1";
-let calendar,events=[],lists=new Map(),doneIds=new Set(),labelHex=new Map();
-const cache=new Map();let tt;
+const API = "https://api.trello.com/1";
+let calendar, events = [], lists = new Map(), doneIds = new Set(), labelNames = new Map();
+const cache = new Map(); let tt;
 
 /* ================= HELPERS ================= */
-const qs=o=>new URLSearchParams(o).toString();
-const day=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x}
-const diff=(a,b)=>Math.round((day(b)-day(a))/86400000);
-const esc=s=>String(s).replace(/[&<>"]/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[m]));
-const token=()=>localStorage.getItem("trello_token");
+const qs = o => new URLSearchParams(o).toString();
+const day = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+const diff = (a, b) => Math.round((day(b) - day(a)) / 86400000);
+const esc = s => String(s).replace(/[&<>"]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" })[m]);
+
+const token = () => localStorage.getItem("trello_token");
 
 /* ================= TOOLTIP ================= */
-function tip(){if(tt)return tt;tt=document.createElement("div");tt.className="tt";document.body.appendChild(tt);return tt}
-function move(e){if(!tt)return;tt.style.left=e.clientX+12+"px";tt.style.top=e.clientY+12+"px"}
-function hide(){if(tt)tt.style.display="none"}
+function tip() { if (tt) return tt; tt = document.createElement("div"); tt.className = "tt"; document.body.appendChild(tt); return tt; }
+function move(e) { if (!tt) return; tt.style.left = e.clientX + 12 + "px"; tt.style.top = e.clientY + 12 + "px"; }
+function hide() { if (tt) tt.style.display = "none"; }
 
 /* ================= LOAD ================= */
-async function load(){
- if(!token())return render([]);
- const [ls,cs]=await Promise.all([
-  fetch(`${API}/boards/${TRELLO.boardId}/lists?${qs({key:TRELLO.key,token:token(),filter:"open",fields:"name"})}`).then(r=>r.json()),
-  fetch(`${API}/boards/${TRELLO.boardId}/cards?${qs({key:TRELLO.key,token:token(),filter:"open",
-    fields:"name,start,due,idLabels,labels,idList,url"})}`).then(r=>r.json())
- ]);
- lists=new Map(ls.map(l=>[l.id,l.name]));
- doneIds=new Set(ls.filter(l=>DONE.has(l.name)).map(l=>l.id));
- events=cs.map(c=>{
-  if(doneIds.has(c.idList))return null;
-  if(!c.start&&!c.due)return null;
-  const labels=c.labels||[];
-  const col=labels.find(l=>l.color)?.color;
-  return{
-   id:c.id,title:c.name,start:c.start||c.due,
-   end:c.start&&c.due?new Date(new Date(c.due).getTime()+86400000).toISOString():null,
-   url:c.url,
-   list:lists.get(c.idList)||"",
-   color:COLORS[col]||"#475569",
-   labels:c.idLabels||[]
-  };
- }).filter(Boolean);
- rebuildLabels();apply();
+async function load() {
+  if (!token()) return render([]);
+  const [ls, cs, tags] = await Promise.all([
+    fetch(`${API}/boards/${TRELLO.boardId}/lists?${qs({ key: TRELLO.key, token: token(), filter: "open", fields: "name" })}`).then(r => r.json()),
+    fetch(`${API}/boards/${TRELLO.boardId}/cards?${qs({ key: TRELLO.key, token: token(), filter: "open", fields: "name,start,due,idLabels,labels,idList,url" })}`).then(r => r.json()),
+    fetch(`${API}/boards/${TRELLO.boardId}/labels?${qs({ key: TRELLO.key, token: token() })}`).then(r => r.json())
+  ]);
+
+  lists = new Map(ls.map(l => [l.id, l.name]));
+  doneIds = new Set(ls.filter(l => DONE.has(l.name)).map(l => l.id));
+  
+  labelNames = new Map(tags.map(t => [t.id, t.name]));
+
+  events = cs.map(c => {
+    if (doneIds.has(c.idList)) return null;
+    if (!c.start && !c.due) return null;
+    const labels = c.labels || [];
+    const col = labels.find(l => l.color)?.color;
+    return {
+      id: c.id, title: c.name, start: c.start || c.due,
+      end: c.start && c.due ? new Date(new Date(c.due).getTime() + 86400000).toISOString() : null,
+      url: c.url,
+      list: lists.get(c.idList) || "",
+      color: COLORS[col] || "#475569",
+      labels: c.idLabels || []
+    };
+  }).filter(Boolean);
+  
+  rebuildLabels(); apply();
 }
 
 /* ================= FILTER ================= */
-function rebuildLabels(){
- const sel=document.getElementById("labelFilter");
- const labs=[...new Set(events.flatMap(e=>e.labels))];
- sel.innerHTML="<option value='__ALL__'>Tags</option>";
- labs.forEach(l=>sel.appendChild(new Option(l,l)));
+function rebuildLabels() {
+  const sel = document.getElementById("labelFilter");
+  sel.innerHTML = "<option value='__ALL__'>Tous les tags</option>";
+  
+  labelNames.forEach((name, id) => {
+    sel.appendChild(new Option(name, id));
+  });
 }
-function apply(){
- const lab=document.getElementById("labelFilter").value;
- const q=document.getElementById("searchInput").value.toLowerCase();
- let f=events.filter(e=>
-  (lab==="__ALL__"||e.labels.includes(lab)) &&
-  (!q||e.title.toLowerCase().includes(q)||e.list.toLowerCase().includes(q))
- );
- calendar.removeAllEvents();calendar.addEventSource(f);render(f);
+function apply() {
+  const lab = document.getElementById("labelFilter").value;
+  const q = document.getElementById("searchInput").value.toLowerCase();
+  let f = events.filter(e =>
+    (lab === "__ALL__" || e.labels.includes(lab)) &&
+    (!q || e.title.toLowerCase().includes(q) || e.list.toLowerCase().includes(q))
+  );
+  calendar.removeAllEvents(); calendar.addEventSource(f); render(f);
 }
 
 /* ================= GANTT ================= */
-function pack(items){
- const lanes=[];
- items.forEach(i=>{
-  let l=lanes.findIndex(e=>i.s>e);
-  if(l<0){l=lanes.length;lanes.push(i.e)}
-  else lanes[l]=i.e;
-  i.lane=l;
- });
- return lanes.length;
-}
-function render(data){
- const g=document.getElementById("gantt");
- if(!data.length){g.innerHTML="";return}
- const v=calendar.view,start=day(v.currentStart),end=day(v.currentEnd);
- const days=diff(start,end);
- const dayW=Math.max(10,Math.min(24,(window.innerWidth-400)/days|0));
- const weekW=dayW*7;
- document.documentElement.style.setProperty("--day",dayW+"px");
- document.documentElement.style.setProperty("--week",weekW+"px");
-
- const by={};
- data.forEach(e=>{
-  const s=day(new Date(e.start)),ee=e.end?day(new Date(e.end)):s;
-  const si=diff(start,s),ei=diff(start,new Date(ee-86400000));
-  (by[e.list]??=[]).push({...e,s:si,e:ei});
- });
-
- let left="",right="";
- Object.entries(by).forEach(([list,items])=>{
-  items.sort((a,b)=>a.s-b.s);pack(items);
-  const h=items.reduce((m,i)=>Math.max(m,i.lane),0);
-  const height=(h+1)*18+8;
-  left+=`<div class="list" style="height:${height}px">${esc(list)}</div>`;
-  let bars="";
-  items.forEach(i=>{
-   const x=i.s*dayW,w=(i.e-i.s+1)*dayW;
-   const y=8+i.lane*24;
-   bars+=i.start&&i.end?
-    `<div class="bar" data-id="${i.id}" data-url="${i.url}"
-      style="left:${x}px;top:${y}px;width:${w}px;background:${i.color};color:#fff">${esc(i.title)}</div>`:
-    `<div class="milestone" data-id="${i.id}" data-url="${i.url}"
-      style="left:${x+dayW/2}px;top:${y+7}px;background:${i.color}"></div>`;
+function pack(items) {
+  const lanes = [];
+  items.forEach(i => {
+    let l = lanes.findIndex(e => i.s > e);
+    if (l < 0) { l = lanes.length; lanes.push(i.e) }
+    else lanes[l] = i.e;
+    i.lane = l;
   });
-  right+=`<div class="lane" style="height:${height}px"><div class="inner">${bars}</div></div>`;
- });
+  return lanes.length;
+}
+function render(data) {
+  const g = document.getElementById("gantt");
+  if (!data.length) { g.innerHTML = ""; return }
+  const v = calendar.view, start = day(v.currentStart), end = day(v.currentEnd);
+  const days = diff(start, end);
+  const dayW = Math.max(10, Math.min(24, (window.innerWidth - 400) / days | 0));
+  const weekW = dayW * 7;
+  document.documentElement.style.setProperty("--day", dayW + "px");
+  document.documentElement.style.setProperty("--week", weekW + "px");
 
- g.innerHTML=`
- <div class="shell">
-  <div class="head">
-   <div class="hl"></div>
-   <div class="hr"><div class="ticks">${
-    Array.from({length:days/7|0}).map((_,i)=>`<div class="tick">S${i+1}</div>`).join("")
-   }</div></div>
-  </div>
-  <div class="scroll">
-   <div class="left">${left}</div>
-   <div class="right"><div style="position:relative;min-width:${days*dayW}px">${right}</div></div>
-  </div>
- </div>`;
+  const by = {};
+  data.forEach(e => {
+    const s = day(new Date(e.start)), ee = e.end ? day(new Date(e.end)) : s;
+    const si = diff(start, s), ei = diff(start, new Date(ee - 86400000));
+    (by[e.list] ?? []).push({ ...e, s: si, e: ei });
+  });
+
+  let left = "", right = "";
+  Object.entries(by).forEach(([list, items]) => {
+    items.sort((a, b) => a.s - b.s); pack(items);
+    const h = items.reduce((m, i) => Math.max(m, i.lane), 0);
+    const height = (h + 1) * 18 + 8;
+    left += `<div class="list" style="height:${height}px">${esc(list)}</div>`;
+    let bars = "";
+    items.forEach(i => {
+      const x = i.s * dayW, w = (i.e - i.s + 1) * dayW;
+      const y = 8 + i.lane * 24;
+      bars += i.start && i.end ?
+        `<div class="bar" data-id="${i.id}" data-url="${i.url}" style="left:${x}px;top:${y}px;width:${w}px;background:${i.color};color:#fff">${esc(i.title)}</div>` :
+        `<div class="milestone" data-id="${i.id}" data-url="${i.url}" style="left:${x + dayW / 2}px;top:${y + 7}px;background:${i.color}"></div>`;
+    });
+    right += `<div class="lane" style="height:${height}px"><div class="inner">${bars}</div></div>`;
+  });
+
+  g.innerHTML = `
+    <div class="shell">
+      <div class="head">
+        <div class="hl"></div>
+        <div class="hr"><div class="ticks">${
+    Array.from({ length: days / 7 | 0 }).map((_, i) => `<div class="tick">S${i + 1}</div>`).join("")
+  }</div></div>
+      </div>
+      <div class="scroll">
+        <div class="left">${left}</div>
+        <div class="right"><div style="position:relative;min-width:${days * dayW}px">${right}</div></div>
+      </div>
+    </div>`;
 }
 
 /* ================= INIT ================= */
-document.addEventListener("DOMContentLoaded",()=>{
- calendar=new FullCalendar.Calendar(document.getElementById("calendar"),{
-  locale:"fr",initialView:"multiMonthQuarter",
-  views:{multiMonthQuarter:{type:"multiMonth",duration:{months:3}},
-         multiMonth1:{type:"multiMonth",duration:{months:1}},
-         multiMonth6:{type:"multiMonth",duration:{months:6}}},
-  headerToolbar:{left:"prev,next today",center:"title",right:""},
-  datesSet:()=>apply()
- });
- calendar.render();
+document.addEventListener("DOMContentLoaded", () => {
+  calendar = new FullCalendar.Calendar(document.getElementById("calendar"), {
+    locale: "fr", initialView: "multiMonthQuarter",
+    views: {
+      multiMonthQuarter: { type: "multiMonth", duration: { months: 3 } },
+      multiMonth1: { type: "multiMonth", duration: { months: 1 } },
+      multiMonth6: { type: "multiMonth", duration: { months: 6 } }
+    },
+    headerToolbar: { left: "prev,next today", center: "title", right: "" },
+    datesSet: () => apply()
+  });
+  calendar.render();
 
- document.getElementById("z1").onclick=()=>calendar.changeView("multiMonth1");
- document.getElementById("z3").onclick=()=>calendar.changeView("multiMonthQuarter");
- document.getElementById("z6").onclick=()=>calendar.changeView("multiMonth6");
- document.getElementById("refresh").onclick=load;
- document.getElementById("logout").onclick=()=>{localStorage.removeItem("trello_token");load()};
- document.getElementById("saveToken").onclick=()=>{
-  localStorage.setItem("trello_token",document.getElementById("tokenInput").value.trim());
-  document.getElementById("tokenInput").value="";load();
- };
- document.getElementById("labelFilter").onchange=apply;
- document.getElementById("searchInput").oninput=apply;
- window.addEventListener("resize",()=>apply());
- load();
+  document.getElementById("z1").onclick = () => calendar.changeView("multiMonth1");
+  document.getElementById("z3").onclick = () => calendar.changeView("multiMonthQuarter");
+  document.getElementById("z6").onclick = () => calendar.changeView("multiMonth6");
+  document.getElementById("refresh").onclick = load;
+  document.getElementById("logout").onclick = () => { localStorage.removeItem("trello_token"); load(); };
+  document.getElementById("saveToken").onclick = () => {
+    localStorage.setItem("trello_token", document.getElementById("tokenInput").value.trim());
+    document.getElementById("tokenInput").value = ""; load();
+  };
+  document.getElementById("labelFilter").onchange = apply;
+  document.getElementById("searchInput").oninput = apply;
+  window.addEventListener("resize", () => apply());
+  load();
 });
 </script>
 </body>
 </html>
-</details>
