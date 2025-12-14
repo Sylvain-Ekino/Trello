@@ -20,7 +20,12 @@
 
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
-.container{max-width:1280px;margin:auto;padding:0 10px}
+.container{
+  width:100%;
+  max-width:none;      /* ✅ 100% largeur navigateur */
+  margin:0;            /* ✅ plus de centrage 1280px */
+  padding:0 10px;
+}
 
 .topbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border)}
 .controls{display:flex;gap:6px;flex-wrap:wrap;padding:6px 0;align-items:center}
@@ -69,6 +74,32 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
     #0002 var(--week)
   );
   pointer-events:none;
+}
+
+/* ✅ Ligne verticale "Aujourd'hui" */
+.todayline{
+  position:absolute;
+  top:0; bottom:0;
+  width:2px;
+  background:#ef4444;
+  opacity:.65;
+  pointer-events:none;
+  z-index:5;
+}
+.todayline::after{
+  content:"Aujourd’hui";
+  position:absolute;
+  top:6px;
+  left:6px;
+  font-size:10px;
+  font-weight:900;
+  color:#ef4444;
+  background:#fff;
+  border:1px solid rgba(239,68,68,.25);
+  padding:2px 6px;
+  border-radius:999px;
+  box-shadow:0 12px 30px rgba(2,6,23,.10);
+  white-space:nowrap;
 }
 
 .rowL, .rowR{
@@ -303,6 +334,17 @@ function fmtDue(iso){
   return new Intl.DateTimeFormat("fr",{day:"2-digit",month:"short"}).format(d);
 }
 function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+
+/* ================= ZOOM BUTTONS ACTIVE STATE ================= */
+function setZoomActive(viewType){
+  const map = { multiMonth1:"z1", multiMonthQuarter:"z3", multiMonth6:"z6" };
+  const activeId = map[viewType] || "z3";
+  ["z1","z3","z6"].forEach(id=>{
+    const b=document.getElementById(id);
+    if(!b) return;
+    b.classList.toggle("active", id===activeId);
+  });
+}
 
 /* ================= TOOLTIP (checklists) ================= */
 let ttEl=null;
@@ -556,7 +598,10 @@ function applyFilters(){
 
 /* ================= GANTT RENDER (cards + subtasks) ================= */
 function computeDayWidth(totalDays){
-  const usable = Math.max(320, window.innerWidth - (parseInt(getComputedStyle(document.documentElement).getPropertyValue("--left")) || 320) - 60);
+  const usable = Math.max(
+    320,
+    window.innerWidth - (parseInt(getComputedStyle(document.documentElement).getPropertyValue("--left")) || 320) - 60
+  );
   const base = Math.floor(usable / Math.max(20, totalDays));
   return clamp(base, 10, 24);
 }
@@ -624,6 +669,15 @@ function renderGantt(cards){
     return clamp(idx, 0, totalDays-1) * dayW;
   }
 
+  // ✅ Today line (only if inside current range)
+  const today = day(new Date());
+  let todayLine = "";
+  if(today >= rangeStart && today < rangeEnd){
+    const idx = diffDays(rangeStart, today);
+    const tx = (idx * dayW) + (dayW / 2);
+    todayLine = `<div class="todayline" style="left:${tx}px"></div>`;
+  }
+
   for(const listName of listOrder){
     // tiny list separator row (minimal, still useful)
     leftHtml += `<div class="rowL" style="height:22px; cursor:default; background:#fff;">
@@ -644,8 +698,6 @@ function renderGantt(cards){
         </div>
       `;
 
-      // right row with bar/milestone
-      const hasBar = !!(c.end && c.start);
       const sx = xForDate(c.start);
       let ex = sx;
       let w = dayW;
@@ -673,7 +725,6 @@ function renderGantt(cards){
         const subtasks = cached?.loaded ? subTasksFromChecklists(c.id, cached.checklists) : [];
 
         if(!cached || !cached.loaded){
-          // placeholder one row while loading (keeps compact)
           leftHtml += `<div class="subL" data-kind="sub" data-card="${esc(c.id)}"><span class="dot" style="background:#cbd5e1"></span><div class="stitle">…</div><div class="sdue"></div></div>`;
           rightHtml += `<div class="subR"></div>`;
         } else if(subtasks.length === 0){
@@ -718,7 +769,10 @@ function renderGantt(cards){
       <div class="scroll">
         <div class="left" id="gLeft">${leftHtml}</div>
         <div class="right" id="gRight">
-          <div style="position:relative;min-width:${minWidth}px">${rightHtml}</div>
+          <div style="position:relative;min-width:${minWidth}px">
+            ${todayLine}
+            ${rightHtml}
+          </div>
         </div>
       </div>
     </div>
@@ -844,14 +898,26 @@ document.addEventListener("DOMContentLoaded",()=>{
       multiMonth6:{type:"multiMonth",duration:{months:6}}
     },
     headerToolbar:{left:"prev,next today",center:"title",right:""},
-    datesSet:()=>applyFilters()
+    datesSet:()=>{
+      setZoomActive(calendar.view.type);
+      applyFilters();
+    }
   });
   calendar.render();
 
   // zoom buttons
-  document.getElementById("z1").onclick=()=>calendar.changeView("multiMonth1");
-  document.getElementById("z3").onclick=()=>calendar.changeView("multiMonthQuarter");
-  document.getElementById("z6").onclick=()=>calendar.changeView("multiMonth6");
+  document.getElementById("z1").onclick=()=>{
+    calendar.changeView("multiMonth1");
+    setZoomActive("multiMonth1");
+  };
+  document.getElementById("z3").onclick=()=>{
+    calendar.changeView("multiMonthQuarter");
+    setZoomActive("multiMonthQuarter");
+  };
+  document.getElementById("z6").onclick=()=>{
+    calendar.changeView("multiMonth6");
+    setZoomActive("multiMonth6");
+  };
 
   // search
   document.getElementById("searchInput").addEventListener("input", ()=>{
@@ -896,6 +962,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   restoreExpanded();
   restoreSelectedTags();
   setTagsBtnLabel();
+  setZoomActive("multiMonthQuarter");
 
   load();
 });
