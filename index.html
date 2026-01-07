@@ -646,9 +646,13 @@ function renderGantt(cards){
   document.documentElement.style.setProperty("--day", dayW + "px");
   document.documentElement.style.setProperty("--week", weekW + "px");
 
+  const milestoneLabel = "milestones";
+  const milestoneCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===milestoneLabel));
+  const regularCards = cards.filter(c=>!c.labels.some(l=>(l.name||"").trim().toLowerCase()===milestoneLabel));
+
   // group by list (still compact)
   const byList=new Map();
-  for(const c of cards){
+  for(const c of regularCards){
     if(!byList.has(c.list)) byList.set(c.list, []);
     byList.get(c.list).push(c);
   }
@@ -676,6 +680,41 @@ function renderGantt(cards){
     const idx = diffDays(rangeStart, today);
     const tx = (idx * dayW) + (dayW / 2);
     todayLine = `<div class="todayline" style="left:${tx}px"></div>`;
+  }
+
+  if(milestoneCards.length){
+    milestoneCards.sort((a,b)=>new Date(a.start)-new Date(b.start));
+    leftHtml += `<div class="rowL" style="cursor:default; background:#fff;">
+      <div class="chev"></div>
+      <div class="title" style="font-size:11px; color:var(--muted);">Milestones (${milestoneCards.length})</div>
+      <div class="due"></div>
+    </div>`;
+
+    let barsHtml="";
+    for(const c of milestoneCards){
+      const sx = xForDate(c.start);
+      let ex = sx;
+      let w = dayW;
+
+      if(c.end){
+        const endInc = new Date(day(new Date(c.end)).getTime() - 86400000);
+        const eIdx = diffDays(rangeStart, endInc);
+        ex = clamp(eIdx, 0, totalDays-1) * dayW;
+        w = Math.max(dayW, (ex - sx + dayW));
+      }
+
+      const barEl = c.end
+        ? `<div class="bar" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+              style="left:${sx}px;width:${w}px;background:${c.baseColor};color:#fff;border-color:${c.baseColor};"
+              title="${esc(c.title)}">${esc(c.title)}</div>`
+        : `<div class="milestone" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+              style="left:${sx + (dayW/2)}px;background:${c.baseColor};"
+              title="${esc(c.title)}"></div>`;
+
+      barsHtml += barEl;
+    }
+
+    rightHtml += `<div class="rowR">${barsHtml}</div>`;
   }
 
   for(const listName of listOrder){
