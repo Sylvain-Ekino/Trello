@@ -609,24 +609,39 @@ async function fetchBoardLists(){
 }
 async function fetchBoardCards(){
   const url = `${API}/boards/${encodeURIComponent(TRELLO.boardId)}/cards?` + qs({
-    key:TRELLO.key, token:token(), fields:"name,start,due,idList,labels,url,badges", filter:"open"
+    key:TRELLO.key, token:token(), fields:"name,start,due,idList,labels,url,badges", customFieldItems:true, filter:"open"
   });
   const res = await fetch(url);
   if(!res.ok) throw new Error("Cards fetch failed");
   return res.json();
 }
 
+async function fetchBoardCustomFields(){
+  const url = `${API}/boards/${encodeURIComponent(TRELLO.boardId)}/customFields?` + qs({
+    key:TRELLO.key, token:token()
+  });
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("Custom fields fetch failed");
+  return res.json();
+}
+
 async function load(){
   if(!token()){ renderGantt([]); return; }
 
-  const [lists,cards]=await Promise.all([fetchBoardLists(), fetchBoardCards()]);
+  const [lists,cards,customFields]=await Promise.all([
+    fetchBoardLists(),
+    fetchBoardCards(),
+    fetchBoardCustomFields()
+  ]);
 
   listNames=new Map(lists.map(l=>[l.id,l.name]));
   doneListIds=new Set(lists.filter(l=>DONE.has(l.name)).map(l=>l.id));
   blockedListIds=new Set(lists.filter(l=>BLOCKED_LISTS.has(l.name)).map(l=>l.id));
+  const customFieldNames=new Map(customFields.map(f=>[f.id, f.name]));
 
   const mappedCards = cards.map(c=>{
-    if(!c.start && !c.due) return null;
+    const isBlocked = blockedListIds.has(c.idList);
+    if(!c.start && !c.due && !isBlocked) return null;
 
     const start=c.start||c.due;
     const end=(c.start && c.due)
@@ -636,6 +651,14 @@ async function load(){
     const labels=(c.labels||[]).map(l=>({name:l.name||"", color:l.color||null}));
     const firstColored=labels.find(l=>l.color)?.color;
     const baseColor=COLORS[firstColored] || "#475569";
+    let reason="";
+    for(const item of (c.customFieldItems||[])){
+      const fieldName = customFieldNames.get(item.idCustomField);
+      if(fieldName !== "Raison") continue;
+      if(item.value?.text) reason = item.value.text;
+      else if(item.value?.number) reason = item.value.number;
+      break;
+    }
 
     return {
       id:c.id,
@@ -648,7 +671,8 @@ async function load(){
       labels,
       baseColor,
       listId:c.idList,
-      hasSubtasks:(c.badges?.checkItems || 0) > 0
+      hasSubtasks:(c.badges?.checkItems || 0) > 0,
+      reason
     };
   }).filter(Boolean);
 
@@ -1074,16 +1098,20 @@ function renderKanban(cards){
   }
   const listOrder=[...byList.keys()].sort((a,b)=>a.localeCompare(b,"fr",{sensitivity:"base"}));
   for(const kname of listOrder){
-    byList.get(kname).sort((a,b)=>new Date(a.start)-new Date(b.start));
+    byList.get(kname).sort((a,b)=>{
+      const da = a.start || a.due || 0;
+      const db = b.start || b.due || 0;
+      return new Date(da) - new Date(db);
+    });
   }
 
   const cols=listOrder.map(listName=>{
     const cardsHtml = byList.get(listName).map(c=>{
-      const due = fmtDue(c.due);
+      const reason = c.reason ? `Raison: ${c.reason}` : "";
       return `
         <div class="kcard" style="border-left-color:${c.baseColor}">
           ${esc(c.title)}
-          <div class="kmeta">${esc(due)} • ${esc(listName)}</div>
+          ${reason ? `<div class="kmeta">${esc(reason)}</div>` : ""}
         </div>
       `;
     }).join("");
