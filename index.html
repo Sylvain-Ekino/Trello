@@ -159,11 +159,24 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .subL .stitle{
   min-width:0;flex:1 1 auto;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  font-size:12px;font-weight:800;
+  font-size:12px;font-weight:300;
 }
 .subL .sdue{
   flex:0 0 auto;
   font-size:11px;font-weight:900;color:var(--muted);
+}
+.checkL{
+  display:flex;align-items:center;gap:8px;
+  padding:0 8px 0 28px;
+  height:var(--subrow);
+  cursor:default;
+  user-select:none;
+  background:#f8fafc;
+}
+.checkL .ctitle{
+  min-width:0;flex:1 1 auto;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-size:12px;font-weight:600;color:var(--muted);
 }
 
 .rowR{
@@ -718,6 +731,29 @@ function subTasksFromChecklists(cardId, checklists){
   return items;
 }
 
+function subTasksByChecklist(cardId, checklists){
+  const groups=[];
+  for(const cl of (checklists||[])){
+    const items=[];
+    for(const it of (cl.checkItems||[])){
+      if(it.state === "complete") continue;
+      if(!it.due) continue;
+      items.push({
+        id: `${cardId}::${it.id}`,
+        cardId,
+        title: it.name || "(sans nom)",
+        due: it.due,
+        checklistName: cl.name || "",
+      });
+    }
+    if(items.length){
+      items.sort((a,b)=>new Date(a.due)-new Date(b.due));
+      groups.push({ name: cl.name || "", items });
+    }
+  }
+  return groups;
+}
+
 function renderGantt(cards){
   const g=document.getElementById("gantt");
   const prevScrollTop = document.querySelector(".scroll")?.scrollTop || 0;
@@ -861,25 +897,34 @@ function renderGantt(cards){
           leftHtml += `<div class="subL" data-kind="sub" data-card="${esc(c.id)}"><span class="dot" style="background:#cbd5e1"></span><div class="stitle">(aucune sous-tâche datée)</div><div class="sdue"></div></div>`;
           rightHtml += `<div class="subR"></div>`;
         } else {
-          for(const st of subtasks){
-            const dx = xForDate(st.due);
-            const dueLabel = fmtDue(st.due);
-
+          const grouped = subTasksByChecklist(c.id, cached.checklists);
+          for(const group of grouped){
             leftHtml += `
-              <div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}" title="${esc(st.checklistName)}">
-                <span class="dot" style="background:${c.baseColor}"></span>
-                <div class="stitle">${esc(st.title)}</div>
-                <div class="sdue">${esc(dueLabel)}</div>
+              <div class="checkL" data-kind="checklist" data-card="${esc(c.id)}">
+                <div class="ctitle">${esc(group.name || "Checklist")}</div>
               </div>
             `;
-            const overdueSub = isOverdue(st.due);
-            rightHtml += `
-              <div class="subR">
-                <div class="milestone ${overdueSub?"overdue":""}" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}"
-                  style="left:${dx + (dayW/2)}px;background:${c.baseColor};"
-                  title="${esc(st.title)}"></div>
-              </div>
-            `;
+            rightHtml += `<div class="subR"></div>`;
+            for(const st of group.items){
+              const dx = xForDate(st.due);
+              const dueLabel = fmtDue(st.due);
+
+              leftHtml += `
+                <div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}" title="${esc(st.checklistName)}">
+                  <span class="dot" style="background:${c.baseColor}"></span>
+                  <div class="stitle">${esc(st.title)}</div>
+                  <div class="sdue">${esc(dueLabel)}</div>
+                </div>
+              `;
+              const overdueSub = isOverdue(st.due);
+              rightHtml += `
+                <div class="subR">
+                  <div class="milestone ${overdueSub?"overdue":""}" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}"
+                    style="left:${dx + (dayW/2)}px;background:${c.baseColor};"
+                    title="${esc(st.title)}"></div>
+                </div>
+              `;
+            }
           }
         }
       }
