@@ -75,6 +75,11 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   );
   pointer-events:none;
 }
+.scroll{
+  height: calc(100vh - 230px);
+  max-height: calc(100vh - 230px);
+  min-height: 320px;
+}
 
 /* ✅ Ligne verticale "Aujourd'hui" */
 .todayline{
@@ -105,6 +110,14 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .rowL, .rowR{
   border-bottom:1px solid var(--border);
 }
+.rowL.milestoneRow,
+.rowR.milestoneRow{
+  position:sticky;
+  top:0;
+  z-index:6;
+  background:#fff;
+}
+.rowR.milestoneRow{z-index:5}
 .rowL{
   display:flex;align-items:center;gap:8px;
   padding:0 8px;
@@ -167,6 +180,11 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   transform:translateY(-50%);
   box-shadow:0 10px 18px rgba(2,6,23,.10);
   border:1px solid rgba(15,23,42,.10);
+}
+.bar.overdue,
+.milestone.overdue{
+  border-color:#ef4444;
+  box-shadow:0 0 0 2px rgba(239,68,68,.35), 0 10px 18px rgba(239,68,68,.2);
 }
 .milestone{
   position:absolute;width:10px;height:10px;
@@ -244,6 +262,65 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .tt .meta{color:var(--muted);font-weight:900;margin-bottom:6px}
 .tt ul{margin:0;padding-left:16px}
 .tt .done{text-decoration:line-through;color:var(--muted)}
+
+.tabs{
+  display:flex;
+  gap:6px;
+  padding:6px;
+  border-bottom:1px solid var(--border);
+  background:#fff;
+  position:sticky;
+  top:0;
+  z-index:9;
+}
+.tab{
+  border:1px solid var(--border);
+  background:#fff;
+  border-radius:999px;
+  padding:4px 10px;
+  font-weight:900;
+  cursor:pointer;
+  font-size:12px;
+  opacity:.6;
+}
+.tab.active{opacity:1}
+
+#kanban{display:none;padding:8px}
+.kanbanGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:10px;
+}
+.kcol{
+  background:#f8fafc;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:8px;
+  min-height:120px;
+}
+.kcol h3{
+  margin:0 0 6px;
+  font-size:12px;
+  font-weight:900;
+  color:var(--muted);
+}
+.kcard{
+  background:#fff;
+  border:1px solid var(--border);
+  border-left:4px solid #94a3b8;
+  border-radius:10px;
+  padding:8px;
+  font-size:12px;
+  font-weight:900;
+  margin-bottom:6px;
+  box-shadow:0 6px 18px rgba(2,6,23,.08);
+}
+.kmeta{
+  margin-top:4px;
+  font-size:11px;
+  color:var(--muted);
+  font-weight:900;
+}
 </style>
 </head>
 
@@ -291,8 +368,13 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 
 <div class="container">
   <div class="panel">
+    <div class="tabs">
+      <button class="tab active" id="tabGantt" type="button">Gantt</button>
+      <button class="tab" id="tabKanban" type="button">Kanban</button>
+    </div>
     <div id="calendar"></div>
     <div id="gantt"></div>
+    <div id="kanban"></div>
   </div>
 </div>
 
@@ -300,6 +382,7 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 /* ================= CONFIG ================= */
 const TRELLO={key:"ec995ad68de9cdaafd64b131e5fa00ec",boardId:"6490c5416cea9255ba3b0383"};
 const DONE=new Set(["🎉 Terminé"]);
+const BLOCKED_LISTS=new Set(["🔒 Bloqué","✋ En attente"]);
 const COLORS={
   green:"#22c55e",yellow:"#eab308",orange:"#f97316",red:"#ef4444",
   purple:"#a855f7",blue:"#3b82f6",sky:"#0ea5e9",
@@ -310,8 +393,11 @@ const API="https://api.trello.com/1";
 let calendar;
 let allCards=[];      // source cards (already excluding 🎉 Terminé + no dates)
 let filteredCards=[]; // after tag/search filters
+let blockedCards=[];  // cards in blocked/waiting lists
+let filteredBlockedCards=[];
 let listNames=new Map();
 let doneListIds=new Set();
+let blockedListIds=new Set();
 
 let allTags=[];              // {name,color,hex} sorted
 let selectedTags=new Set();  // by name
@@ -334,6 +420,11 @@ function fmtDue(iso){
   return new Intl.DateTimeFormat("fr",{day:"2-digit",month:"short"}).format(d);
 }
 function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+function isOverdue(iso){
+  if(!iso) return false;
+  const d=day(new Date(iso));
+  return d < day(new Date());
+}
 
 /* ================= ZOOM BUTTONS ACTIVE STATE ================= */
 function setZoomActive(viewType){
@@ -395,7 +486,8 @@ function renderChecklistHtml(checklists){
 /* ================= TAGS (A→Z) ================= */
 function rebuildTagsModel(){
   const map=new Map(); // name -> {name,color,hex}
-  for(const c of allCards){
+  const tagCards=[...allCards, ...blockedCards];
+  for(const c of tagCards){
     for(const l of c.labels){
       const name=(l.name||"").trim();
       if(!name) continue;
@@ -516,7 +608,7 @@ async function fetchBoardLists(){
 }
 async function fetchBoardCards(){
   const url = `${API}/boards/${encodeURIComponent(TRELLO.boardId)}/cards?` + qs({
-    key:TRELLO.key, token:token(), fields:"name,start,due,idList,labels,url", filter:"open"
+    key:TRELLO.key, token:token(), fields:"name,start,due,idList,labels,url,badges", filter:"open"
   });
   const res = await fetch(url);
   if(!res.ok) throw new Error("Cards fetch failed");
@@ -530,9 +622,9 @@ async function load(){
 
   listNames=new Map(lists.map(l=>[l.id,l.name]));
   doneListIds=new Set(lists.filter(l=>DONE.has(l.name)).map(l=>l.id));
+  blockedListIds=new Set(lists.filter(l=>BLOCKED_LISTS.has(l.name)).map(l=>l.id));
 
-  allCards = cards.map(c=>{
-    if(doneListIds.has(c.idList)) return null;
+  const mappedCards = cards.map(c=>{
     if(!c.start && !c.due) return null;
 
     const start=c.start||c.due;
@@ -553,9 +645,14 @@ async function load(){
       url:c.url,
       list:listNames.get(c.idList)||"",
       labels,
-      baseColor
+      baseColor,
+      listId:c.idList,
+      hasSubtasks:(c.badges?.checkItems || 0) > 0
     };
   }).filter(Boolean);
+
+  allCards = mappedCards.filter(c=>!doneListIds.has(c.listId) && !blockedListIds.has(c.listId));
+  blockedCards = mappedCards.filter(c=>blockedListIds.has(c.listId));
 
   rebuildTagsModel();
   restoreSelectedTags();
@@ -575,6 +672,11 @@ function applyFilters(){
     const textOK = !q || c.title.toLowerCase().includes(q) || c.list.toLowerCase().includes(q);
     return tagOK && textOK;
   });
+  filteredBlockedCards = blockedCards.filter(c=>{
+    const tagOK = selected.length===0 || c.labels.some(l=>selected.includes((l.name||"").trim()));
+    const textOK = !q || c.title.toLowerCase().includes(q) || c.list.toLowerCase().includes(q);
+    return tagOK && textOK;
+  });
 
   // couleur homogène si 1 seul tag coché
   if(selected.length===1){
@@ -582,6 +684,7 @@ function applyFilters(){
     const info=allTags.find(t=>t.name===tag);
     if(info?.hex){
       filteredCards = filteredCards.map(c=>({ ...c, baseColor: info.hex }));
+      filteredBlockedCards = filteredBlockedCards.map(c=>({ ...c, baseColor: info.hex }));
     }
   }
 
@@ -594,6 +697,7 @@ function applyFilters(){
   })));
 
   renderGantt(filteredCards);
+  renderKanban(filteredBlockedCards);
 }
 
 /* ================= GANTT RENDER (cards + subtasks) ================= */
@@ -684,7 +788,7 @@ function renderGantt(cards){
 
   if(milestoneCards.length){
     milestoneCards.sort((a,b)=>new Date(a.start)-new Date(b.start));
-    leftHtml += `<div class="rowL" style="cursor:default; background:#fff;">
+    leftHtml += `<div class="rowL milestoneRow" style="cursor:default; background:#fff;">
       <div class="chev"></div>
       <div class="title" style="font-size:11px; color:var(--muted);">Milestones (${milestoneCards.length})</div>
       <div class="due"></div>
@@ -703,34 +807,36 @@ function renderGantt(cards){
         w = Math.max(dayW, (ex - sx + dayW));
       }
 
+      const overdue = isOverdue(c.due);
       const barEl = c.end
-        ? `<div class="bar" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+        ? `<div class="bar ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+              data-has-subtasks="${c.hasSubtasks?"true":"false"}"
               style="left:${sx}px;width:${w}px;background:${c.baseColor};color:#fff;border-color:${c.baseColor};"
               title="${esc(c.title)}">${esc(c.title)}</div>`
-        : `<div class="milestone" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+        : `<div class="milestone ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+              data-has-subtasks="${c.hasSubtasks?"true":"false"}"
               style="left:${sx + (dayW/2)}px;background:${c.baseColor};"
               title="${esc(c.title)}"></div>`;
 
       barsHtml += barEl;
     }
 
-    rightHtml += `<div class="rowR">${barsHtml}</div>`;
+    rightHtml += `<div class="rowR milestoneRow">${barsHtml}</div>`;
   }
 
   for(const listName of listOrder){
-    // tiny list separator row (minimal, still useful)
-    leftHtml += `<div class="rowL" style="height:22px; cursor:default; background:#fff;">
-      <div class="chev"></div><div class="title" style="font-size:11px; color:var(--muted);">${esc(listName)}</div><div class="due"></div>
-    </div>`;
-    rightHtml += `<div class="rowR" style="height:22px;"></div>`;
-
     for(const c of byList.get(listName)){
       const expanded = expandedCards.has(c.id);
-      const chev = expanded ? "▾" : "▸";
+      const hasSubtasks = c.hasSubtasks;
+      const chev = !hasSubtasks ? "" : (expanded ? "▾" : "▸");
       const dueTxt = fmtDue(c.due);
 
+      const titleMsg = hasSubtasks
+        ? "Clic: sous-tâches • Ctrl/Cmd+clic: ouvrir Trello"
+        : "Ctrl/Cmd+clic: ouvrir Trello";
+
       leftHtml += `
-        <div class="rowL" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}" title="Clic: sous-tâches • Ctrl/Cmd+clic: ouvrir Trello">
+        <div class="rowL" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}" data-has-subtasks="${hasSubtasks?"true":"false"}" title="${titleMsg}">
           <div class="chev">${chev}</div>
           <div class="title">${esc(c.title)}</div>
           <div class="due">${esc(dueTxt)}</div>
@@ -748,18 +854,21 @@ function renderGantt(cards){
         w = Math.max(dayW, (ex - sx + dayW));
       }
 
+      const overdue = isOverdue(c.due);
       const barEl = c.end
-        ? `<div class="bar" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+        ? `<div class="bar ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+              data-has-subtasks="${hasSubtasks?"true":"false"}"
               style="left:${sx}px;width:${w}px;background:${c.baseColor};color:#fff;border-color:${c.baseColor};"
               title="${esc(c.title)}">${esc(c.title)}</div>`
-        : `<div class="milestone" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+        : `<div class="milestone ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+              data-has-subtasks="${hasSubtasks?"true":"false"}"
               style="left:${sx + (dayW/2)}px;background:${c.baseColor};"
               title="${esc(c.title)}"></div>`;
 
       rightHtml += `<div class="rowR">${barEl}</div>`;
 
       // subtasks rows
-      if(expanded){
+      if(expanded && hasSubtasks){
         const cached = checklistCache.get(c.id);
         const subtasks = cached?.loaded ? subTasksFromChecklists(c.id, cached.checklists) : [];
 
@@ -773,6 +882,7 @@ function renderGantt(cards){
           for(const st of subtasks){
             const dx = xForDate(st.due);
             const dueLabel = fmtDue(st.due);
+            const overdueSub = isOverdue(st.due);
 
             leftHtml += `
               <div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}" title="${esc(st.checklistName)}">
@@ -783,7 +893,7 @@ function renderGantt(cards){
             `;
             rightHtml += `
               <div class="subR">
-                <div class="milestone" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}"
+                <div class="milestone ${overdueSub?"overdue":""}" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}"
                   style="left:${dx + (dayW/2)}px;background:${c.baseColor};"
                   title="${esc(st.title)}"></div>
               </div>
@@ -800,7 +910,13 @@ function renderGantt(cards){
         <div class="hl"></div>
         <div class="hr">
           <div class="ticks">
-            ${Array.from({length:Math.max(1,(totalDays/7|0))}).map((_,i)=>`<div class="tick">S${i+1}</div>`).join("")}
+            ${Array.from({length:Math.max(1,Math.ceil(totalDays/7))}).map((_,i)=>{
+              const dt = new Date(rangeStart.getTime() + i*7*86400000);
+              const label = ["multiMonth1","multiMonthQuarter"].includes(calendar.view.type)
+                ? new Intl.DateTimeFormat("fr",{day:"2-digit",month:"short"}).format(dt)
+                : `S${i+1}`;
+              return `<div class="tick">${label}</div>`;
+            }).join("")}
           </div>
         </div>
       </div>
@@ -856,6 +972,7 @@ function bindGanttInteractions(){
 
     // Click on card toggles expand/collapse (not open)
     if(kind === "card" && cardId){
+      if(el.getAttribute("data-has-subtasks") !== "true") return;
       if(expandedCards.has(cardId)) expandedCards.delete(cardId);
       else expandedCards.add(cardId);
       persistExpanded();
@@ -924,6 +1041,51 @@ function bindGanttInteractions(){
   };
 
   root.onmouseleave = ()=>hideTT();
+}
+
+/* ================= KANBAN (blocked/waiting) ================= */
+function renderKanban(cards){
+  const k=document.getElementById("kanban");
+  if(!cards.length){ k.innerHTML=""; return; }
+
+  const byList=new Map();
+  for(const c of cards){
+    if(!byList.has(c.list)) byList.set(c.list, []);
+    byList.get(c.list).push(c);
+  }
+  const listOrder=[...byList.keys()].sort((a,b)=>a.localeCompare(b,"fr",{sensitivity:"base"}));
+  for(const kname of listOrder){
+    byList.get(kname).sort((a,b)=>new Date(a.start)-new Date(b.start));
+  }
+
+  const cols=listOrder.map(listName=>{
+    const cardsHtml = byList.get(listName).map(c=>{
+      const due = fmtDue(c.due);
+      return `
+        <div class="kcard" style="border-left-color:${c.baseColor}">
+          ${esc(c.title)}
+          <div class="kmeta">${esc(due)} • ${esc(listName)}</div>
+        </div>
+      `;
+    }).join("");
+    return `<div class="kcol"><h3>${esc(listName)}</h3>${cardsHtml || `<div class="kmeta">Aucune carte</div>`}</div>`;
+  }).join("");
+
+  k.innerHTML = `<div class="kanbanGrid">${cols}</div>`;
+}
+
+function setView(view){
+  const gantt=document.getElementById("gantt");
+  const kanban=document.getElementById("kanban");
+  const calendarEl=document.getElementById("calendar");
+  const tabG=document.getElementById("tabGantt");
+  const tabK=document.getElementById("tabKanban");
+  const showG = view === "gantt";
+  gantt.style.display = showG ? "" : "none";
+  kanban.style.display = showG ? "none" : "block";
+  calendarEl.style.display = showG ? "" : "none";
+  tabG.classList.toggle("active", showG);
+  tabK.classList.toggle("active", !showG);
 }
 
 /* ================= INIT ================= */
@@ -1002,6 +1164,9 @@ document.addEventListener("DOMContentLoaded",()=>{
   restoreSelectedTags();
   setTagsBtnLabel();
   setZoomActive("multiMonthQuarter");
+
+  document.getElementById("tabGantt").addEventListener("click", ()=>setView("gantt"));
+  document.getElementById("tabKanban").addEventListener("click", ()=>setView("kanban"));
 
   load();
 });
