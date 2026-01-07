@@ -117,6 +117,14 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .rowL, .rowR{
   border-bottom:1px solid var(--border);
 }
+.rowL.milestoneRow,
+.rowR.milestoneRow{
+  position:sticky;
+  top:0;
+  z-index:6;
+  background:#fff;
+}
+.rowR.milestoneRow{z-index:5}
 .rowL{
   display:flex;align-items:center;gap:8px;
   padding:0 8px;
@@ -183,6 +191,11 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   text-align:center;
 }
 .bar.full-title{overflow:visible;text-overflow:clip}
+.bar.overdue,
+.milestone.overdue{
+  border-color:#ef4444;
+  box-shadow:0 0 0 2px rgba(239,68,68,.35), 0 10px 18px rgba(239,68,68,.2);
+}
 .milestone{
   position:absolute;width:10px;height:10px;
   transform:translate(-50%,-50%) rotate(45deg);
@@ -395,6 +408,11 @@ function fmtDue(iso){
   return new Intl.DateTimeFormat("fr",{day:"2-digit",month:"short"}).format(d);
 }
 function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+function isOverdue(iso){
+  if(!iso) return false;
+  const d=day(new Date(iso));
+  return d < day(new Date());
+}
 
 /* ================= ZOOM BUTTONS ACTIVE STATE ================= */
 function setZoomActive(viewType){
@@ -750,7 +768,7 @@ function renderGantt(cards){
 
   if(milestoneCards.length){
     milestoneCards.sort((a,b)=>new Date(a.start)-new Date(b.start));
-    leftHtml += `<div class="rowL" style="cursor:default; background:#fff;">
+    leftHtml += `<div class="rowL milestoneRow" style="cursor:default; background:#fff;">
       <div class="chev"></div>
       <div class="title" style="font-size:11px; color:var(--muted);">Milestones (${milestoneCards.length})</div>
       <div class="due"></div>
@@ -770,12 +788,13 @@ function renderGantt(cards){
       }
 
       const fullTitle = c.title.trim().toLowerCase() === "milestones";
+      const overdue = isOverdue(c.due);
       const barEl = c.end
-        ? `<div class="bar ${fullTitle?"full-title":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+        ? `<div class="bar ${fullTitle?"full-title":""} ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
               data-has-subtasks="${c.hasSubtasks?"true":"false"}"
               style="left:${sx}px;width:${w}px;background:${c.baseColor};color:#fff;border-color:${c.baseColor};"
               title="${esc(c.title)}">${esc(c.title)}</div>`
-        : `<div class="milestone" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+        : `<div class="milestone ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
               data-has-subtasks="${c.hasSubtasks?"true":"false"}"
               style="left:${sx + (dayW/2)}px;background:${c.baseColor};"
               title="${esc(c.title)}"></div>`;
@@ -783,16 +802,10 @@ function renderGantt(cards){
       barsHtml += barEl;
     }
 
-    rightHtml += `<div class="rowR">${barsHtml}</div>`;
+    rightHtml += `<div class="rowR milestoneRow">${barsHtml}</div>`;
   }
 
   for(const listName of listOrder){
-    // tiny list separator row (minimal, still useful)
-    leftHtml += `<div class="rowL" style="height:22px; cursor:default; background:#fff;">
-      <div class="chev"></div><div class="title" style="font-size:11px; color:var(--muted);">${esc(listName)}</div><div class="due"></div>
-    </div>`;
-    rightHtml += `<div class="rowR" style="height:22px;"></div>`;
-
     for(const c of byList.get(listName)){
       const expanded = expandedCards.has(c.id);
       const hasSubtasks = c.hasSubtasks;
@@ -823,12 +836,13 @@ function renderGantt(cards){
       }
 
       const fullTitle = c.title.trim().toLowerCase() === "milestones";
+      const overdue = isOverdue(c.due);
       const barEl = c.end
-        ? `<div class="bar ${fullTitle?"full-title":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+        ? `<div class="bar ${fullTitle?"full-title":""} ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
               data-has-subtasks="${hasSubtasks?"true":"false"}"
               style="left:${sx}px;width:${w}px;background:${c.baseColor};color:#fff;border-color:${c.baseColor};"
               title="${esc(c.title)}">${esc(c.title)}</div>`
-        : `<div class="milestone" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+        : `<div class="milestone ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
               data-has-subtasks="${hasSubtasks?"true":"false"}"
               style="left:${sx + (dayW/2)}px;background:${c.baseColor};"
               title="${esc(c.title)}"></div>`;
@@ -858,9 +872,10 @@ function renderGantt(cards){
                 <div class="sdue">${esc(dueLabel)}</div>
               </div>
             `;
+            const overdueSub = isOverdue(st.due);
             rightHtml += `
               <div class="subR">
-                <div class="milestone" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}"
+                <div class="milestone ${overdueSub?"overdue":""}" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}"
                   style="left:${dx + (dayW/2)}px;background:${c.baseColor};"
                   title="${esc(st.title)}"></div>
               </div>
@@ -877,7 +892,13 @@ function renderGantt(cards){
         <div class="hl"></div>
         <div class="hr">
           <div class="ticks">
-            ${Array.from({length:Math.max(1,(totalDays/7|0))}).map((_,i)=>`<div class="tick">S${i+1}</div>`).join("")}
+            ${Array.from({length:Math.max(1,Math.ceil(totalDays/7))}).map((_,i)=>{
+              const dt = new Date(rangeStart.getTime() + i*7*86400000);
+              const label = ["multiMonth1","multiMonthQuarter"].includes(calendar.view.type)
+                ? new Intl.DateTimeFormat("fr",{day:"2-digit",month:"short"}).format(dt)
+                : `S${i+1}`;
+              return `<div class="tick">${label}</div>`;
+            }).join("")}
           </div>
         </div>
       </div>
