@@ -403,7 +403,9 @@ let blockedListIds=new Set();
 let allTags=[];              // {name,color,hex} sorted
 let selectedTags=new Set();  // by name
 const TAGS_KEY="tc_selected_tags";
+const TAGS_NONE="__NONE__";
 const EXPAND_KEY="tc_expanded_cards";
+let tagsMode="all"; // all | none | some
 
 let expandedCards=new Set(); // cardId
 const checklistCache=new Map(); // cardId -> {loaded, checklists}
@@ -511,16 +513,29 @@ function restoreSelectedTags(){
   try{
     const raw=localStorage.getItem(TAGS_KEY);
     const arr=raw?JSON.parse(raw):[];
+    if(arr.includes(TAGS_NONE)){
+      tagsMode="none";
+      return;
+    }
     for(const t of arr){
       if(allTags.some(x=>x.name===t)) selectedTags.add(t);
     }
+    tagsMode = selectedTags.size ? "some" : "all";
   }catch{}
 }
 function persistSelectedTags(){
+  if(tagsMode === "none"){
+    localStorage.setItem(TAGS_KEY, JSON.stringify([TAGS_NONE]));
+    return;
+  }
   localStorage.setItem(TAGS_KEY, JSON.stringify([...selectedTags]));
 }
 function setTagsBtnLabel(){
   const el=document.getElementById("tagsBtnLabel");
+  if(tagsMode === "none"){
+    el.textContent="Aucun";
+    return;
+  }
   const n=selectedTags.size;
   if(n===0) el.textContent="Tous";
   else if(n===1) el.textContent=[...selectedTags][0];
@@ -546,6 +561,7 @@ function renderTagsDropdown(){
     cb.id=id;
     cb.checked=checked;
     cb.addEventListener("change", ()=>{
+      tagsMode = "some";
       if(cb.checked) selectedTags.add(t.name);
       else selectedTags.delete(t.name);
       persistSelectedTags();
@@ -693,12 +709,16 @@ function applyFilters(){
   const selected=[...selectedTags];
 
   filteredCards = allCards.filter(c=>{
-    const tagOK = selected.length===0 || c.labels.some(l=>selected.includes((l.name||"").trim()));
+    const tagOK = tagsMode === "none"
+      ? false
+      : (selected.length===0 || c.labels.some(l=>selected.includes((l.name||"").trim())));
     const textOK = !q || c.title.toLowerCase().includes(q) || c.list.toLowerCase().includes(q);
     return tagOK && textOK;
   });
   filteredBlockedCards = blockedCards.filter(c=>{
-    const tagOK = selected.length===0 || c.labels.some(l=>selected.includes((l.name||"").trim()));
+    const tagOK = tagsMode === "none"
+      ? false
+      : (selected.length===0 || c.labels.some(l=>selected.includes((l.name||"").trim())));
     const textOK = !q || c.title.toLowerCase().includes(q) || c.list.toLowerCase().includes(q);
     return tagOK && textOK;
   });
@@ -1107,7 +1127,7 @@ function renderKanban(cards){
 
   const cols=listOrder.map(listName=>{
     const cardsHtml = byList.get(listName).map(c=>{
-      const reason = c.reason ? `Raison: ${c.reason}` : "";
+      const reason = c.reason || "";
       return `
         <div class="kcard" style="border-left-color:${c.baseColor}">
           ${esc(c.title)}
@@ -1190,12 +1210,14 @@ document.addEventListener("DOMContentLoaded",()=>{
   dd.addEventListener("click", (e)=>e.stopPropagation());
   document.getElementById("tagsSearch").addEventListener("input", ()=>renderTagsDropdown());
   document.getElementById("tagsAll").addEventListener("click", ()=>{
+    tagsMode = "all";
     selectedTags = new Set(allTags.map(t=>t.name));
     persistSelectedTags();
     renderTagsDropdown();
     applyFilters();
   });
   document.getElementById("tagsNone").addEventListener("click", ()=>{
+    tagsMode = "none";
     selectedTags.clear();
     persistSelectedTags();
     renderTagsDropdown();
