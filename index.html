@@ -44,6 +44,18 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 
 .btn{cursor:pointer}
 .token{display:flex;gap:4px}
+.viewtabs{display:flex;gap:4px}
+.viewtab{
+  border:1px solid var(--border);
+  background:#fff;
+  border-radius:999px;
+  padding:4px 10px;
+  font-weight:900;
+  font-size:12px;
+  cursor:pointer;
+  opacity:.6;
+}
+.viewtab.active{opacity:1}
 
 .panel{margin-top:6px;border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden}
 
@@ -60,9 +72,9 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .ticks{display:flex}
 .tick{width:var(--week);font-size:10px;font-weight:900;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.scroll{display:grid;grid-template-columns:var(--left) 1fr;max-height:75vh}
-.left{border-right:1px solid var(--border);overflow:auto}
-.right{position:relative;overflow:auto;
+.scroll{display:grid;grid-template-columns:var(--left) 1fr;max-height:75vh;overflow-y:auto}
+.left{border-right:1px solid var(--border);overflow:hidden}
+.right{position:relative;overflow-x:auto;overflow-y:hidden;
   background:repeating-linear-gradient(to right,#0001 0,#0001 1px,transparent 1px,transparent var(--day))}
 .right::before{
   content:"";position:absolute;inset:0;
@@ -74,11 +86,6 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
     #0002 var(--week)
   );
   pointer-events:none;
-}
-.scroll{
-  height: calc(100vh - 230px);
-  max-height: calc(100vh - 230px);
-  min-height: 320px;
 }
 
 /* ✅ Ligne verticale "Aujourd'hui" */
@@ -110,14 +117,6 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .rowL, .rowR{
   border-bottom:1px solid var(--border);
 }
-.rowL.milestoneRow,
-.rowR.milestoneRow{
-  position:sticky;
-  top:0;
-  z-index:6;
-  background:#fff;
-}
-.rowR.milestoneRow{z-index:5}
 .rowL{
   display:flex;align-items:center;gap:8px;
   padding:0 8px;
@@ -180,12 +179,10 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   transform:translateY(-50%);
   box-shadow:0 10px 18px rgba(2,6,23,.10);
   border:1px solid rgba(15,23,42,.10);
+  display:flex;align-items:center;justify-content:center;
+  text-align:center;
 }
-.bar.overdue,
-.milestone.overdue{
-  border-color:#ef4444;
-  box-shadow:0 0 0 2px rgba(239,68,68,.35), 0 10px 18px rgba(239,68,68,.2);
-}
+.bar.full-title{overflow:visible;text-overflow:clip}
 .milestone{
   position:absolute;width:10px;height:10px;
   transform:translate(-50%,-50%) rotate(45deg);
@@ -263,29 +260,6 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .tt ul{margin:0;padding-left:16px}
 .tt .done{text-decoration:line-through;color:var(--muted)}
 
-.tabs{
-  display:flex;
-  gap:6px;
-  padding:6px;
-  border-bottom:1px solid var(--border);
-  background:#fff;
-  position:sticky;
-  top:0;
-  z-index:9;
-}
-.tab{
-  border:1px solid var(--border);
-  background:#fff;
-  border-radius:999px;
-  padding:4px 10px;
-  font-weight:900;
-  cursor:pointer;
-  font-size:12px;
-  opacity:.6;
-}
-.tab.active{opacity:1}
-
-#kanban{display:none;padding:8px}
 .kanbanGrid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
@@ -328,6 +302,11 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 <div class="topbar">
   <div class="container">
     <div class="controls">
+      <div class="viewtabs">
+        <button class="viewtab active" id="tabGantt" type="button">Tâches en cours</button>
+        <button class="viewtab" id="tabKanban" type="button">Tâches bloquées</button>
+      </div>
+
       <div class="chip" id="tagsChip">
         <strong>Tags</strong>
         <button class="ddbtn" id="tagsBtn" type="button" aria-haspopup="true" aria-expanded="false">
@@ -368,13 +347,9 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 
 <div class="container">
   <div class="panel">
-    <div class="tabs">
-      <button class="tab active" id="tabGantt" type="button">Gantt</button>
-      <button class="tab" id="tabKanban" type="button">Kanban</button>
-    </div>
     <div id="calendar"></div>
     <div id="gantt"></div>
-    <div id="kanban"></div>
+    <div id="kanban" style="display:none;padding:8px"></div>
   </div>
 </div>
 
@@ -393,7 +368,7 @@ const API="https://api.trello.com/1";
 let calendar;
 let allCards=[];      // source cards (already excluding 🎉 Terminé + no dates)
 let filteredCards=[]; // after tag/search filters
-let blockedCards=[];  // cards in blocked/waiting lists
+let blockedCards=[];
 let filteredBlockedCards=[];
 let listNames=new Map();
 let doneListIds=new Set();
@@ -420,11 +395,6 @@ function fmtDue(iso){
   return new Intl.DateTimeFormat("fr",{day:"2-digit",month:"short"}).format(d);
 }
 function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
-function isOverdue(iso){
-  if(!iso) return false;
-  const d=day(new Date(iso));
-  return d < day(new Date());
-}
 
 /* ================= ZOOM BUTTONS ACTIVE STATE ================= */
 function setZoomActive(viewType){
@@ -678,16 +648,6 @@ function applyFilters(){
     return tagOK && textOK;
   });
 
-  // couleur homogène si 1 seul tag coché
-  if(selected.length===1){
-    const tag=selected[0];
-    const info=allTags.find(t=>t.name===tag);
-    if(info?.hex){
-      filteredCards = filteredCards.map(c=>({ ...c, baseColor: info.hex }));
-      filteredBlockedCards = filteredBlockedCards.map(c=>({ ...c, baseColor: info.hex }));
-    }
-  }
-
   calendar.removeAllEvents();
   calendar.addEventSource(filteredCards.map(c=>({
     id:c.id, title:c.title, start:c.start, end:c.end || undefined, allDay:true,
@@ -742,6 +702,8 @@ function subTasksFromChecklists(cardId, checklists){
 
 function renderGantt(cards){
   const g=document.getElementById("gantt");
+  const prevScrollTop = document.querySelector(".scroll")?.scrollTop || 0;
+  const prevScrollLeft = document.getElementById("gRight")?.scrollLeft || 0;
   if(!cards.length){ g.innerHTML=""; return; }
 
   const { rangeStart, rangeEnd, totalDays } = getViewRange();
@@ -788,7 +750,7 @@ function renderGantt(cards){
 
   if(milestoneCards.length){
     milestoneCards.sort((a,b)=>new Date(a.start)-new Date(b.start));
-    leftHtml += `<div class="rowL milestoneRow" style="cursor:default; background:#fff;">
+    leftHtml += `<div class="rowL" style="cursor:default; background:#fff;">
       <div class="chev"></div>
       <div class="title" style="font-size:11px; color:var(--muted);">Milestones (${milestoneCards.length})</div>
       <div class="due"></div>
@@ -807,13 +769,13 @@ function renderGantt(cards){
         w = Math.max(dayW, (ex - sx + dayW));
       }
 
-      const overdue = isOverdue(c.due);
+      const fullTitle = c.title.trim().toLowerCase() === "milestones";
       const barEl = c.end
-        ? `<div class="bar ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+        ? `<div class="bar ${fullTitle?"full-title":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
               data-has-subtasks="${c.hasSubtasks?"true":"false"}"
               style="left:${sx}px;width:${w}px;background:${c.baseColor};color:#fff;border-color:${c.baseColor};"
               title="${esc(c.title)}">${esc(c.title)}</div>`
-        : `<div class="milestone ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+        : `<div class="milestone" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
               data-has-subtasks="${c.hasSubtasks?"true":"false"}"
               style="left:${sx + (dayW/2)}px;background:${c.baseColor};"
               title="${esc(c.title)}"></div>`;
@@ -821,10 +783,16 @@ function renderGantt(cards){
       barsHtml += barEl;
     }
 
-    rightHtml += `<div class="rowR milestoneRow">${barsHtml}</div>`;
+    rightHtml += `<div class="rowR">${barsHtml}</div>`;
   }
 
   for(const listName of listOrder){
+    // tiny list separator row (minimal, still useful)
+    leftHtml += `<div class="rowL" style="height:22px; cursor:default; background:#fff;">
+      <div class="chev"></div><div class="title" style="font-size:11px; color:var(--muted);">${esc(listName)}</div><div class="due"></div>
+    </div>`;
+    rightHtml += `<div class="rowR" style="height:22px;"></div>`;
+
     for(const c of byList.get(listName)){
       const expanded = expandedCards.has(c.id);
       const hasSubtasks = c.hasSubtasks;
@@ -854,13 +822,13 @@ function renderGantt(cards){
         w = Math.max(dayW, (ex - sx + dayW));
       }
 
-      const overdue = isOverdue(c.due);
+      const fullTitle = c.title.trim().toLowerCase() === "milestones";
       const barEl = c.end
-        ? `<div class="bar ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+        ? `<div class="bar ${fullTitle?"full-title":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
               data-has-subtasks="${hasSubtasks?"true":"false"}"
               style="left:${sx}px;width:${w}px;background:${c.baseColor};color:#fff;border-color:${c.baseColor};"
               title="${esc(c.title)}">${esc(c.title)}</div>`
-        : `<div class="milestone ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+        : `<div class="milestone" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
               data-has-subtasks="${hasSubtasks?"true":"false"}"
               style="left:${sx + (dayW/2)}px;background:${c.baseColor};"
               title="${esc(c.title)}"></div>`;
@@ -882,7 +850,6 @@ function renderGantt(cards){
           for(const st of subtasks){
             const dx = xForDate(st.due);
             const dueLabel = fmtDue(st.due);
-            const overdueSub = isOverdue(st.due);
 
             leftHtml += `
               <div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}" title="${esc(st.checklistName)}">
@@ -893,7 +860,7 @@ function renderGantt(cards){
             `;
             rightHtml += `
               <div class="subR">
-                <div class="milestone ${overdueSub?"overdue":""}" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}"
+                <div class="milestone" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}"
                   style="left:${dx + (dayW/2)}px;background:${c.baseColor};"
                   title="${esc(st.title)}"></div>
               </div>
@@ -910,13 +877,7 @@ function renderGantt(cards){
         <div class="hl"></div>
         <div class="hr">
           <div class="ticks">
-            ${Array.from({length:Math.max(1,Math.ceil(totalDays/7))}).map((_,i)=>{
-              const dt = new Date(rangeStart.getTime() + i*7*86400000);
-              const label = ["multiMonth1","multiMonthQuarter"].includes(calendar.view.type)
-                ? new Intl.DateTimeFormat("fr",{day:"2-digit",month:"short"}).format(dt)
-                : `S${i+1}`;
-              return `<div class="tick">${label}</div>`;
-            }).join("")}
+            ${Array.from({length:Math.max(1,(totalDays/7|0))}).map((_,i)=>`<div class="tick">S${i+1}</div>`).join("")}
           </div>
         </div>
       </div>
@@ -933,18 +894,10 @@ function renderGantt(cards){
     </div>
   `;
 
-  // sync vertical scroll
-  const L=document.getElementById("gLeft");
-  const R=document.getElementById("gRight");
-  let syncing=false;
-  const sync = (from, to) => () => {
-    if(syncing) return;
-    syncing=true;
-    to.scrollTop = from.scrollTop;
-    syncing=false;
-  };
-  L.addEventListener("scroll", sync(L,R), {passive:true});
-  R.addEventListener("scroll", sync(R,L), {passive:true});
+  const scrollEl = document.querySelector(".scroll");
+  if(scrollEl) scrollEl.scrollTop = prevScrollTop;
+  const rightEl = document.getElementById("gRight");
+  if(rightEl) rightEl.scrollLeft = prevScrollLeft;
 
   bindGanttInteractions();
 }
@@ -1098,6 +1051,7 @@ document.addEventListener("DOMContentLoaded",()=>{
       multiMonth1:{type:"multiMonth",duration:{months:1}},
       multiMonth6:{type:"multiMonth",duration:{months:6}}
     },
+    buttonText:{ today:"Aujourd'hui" },
     headerToolbar:{left:"prev,next today",center:"title",right:""},
     datesSet:()=>{
       setZoomActive(calendar.view.type);
