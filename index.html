@@ -98,21 +98,6 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   pointer-events:none;
   z-index:5;
 }
-.todayline::after{
-  content:"Aujourd’hui";
-  position:absolute;
-  top:6px;
-  left:6px;
-  font-size:10px;
-  font-weight:900;
-  color:#ef4444;
-  background:#fff;
-  border:1px solid rgba(239,68,68,.25);
-  padding:2px 6px;
-  border-radius:999px;
-  box-shadow:0 12px 30px rgba(2,6,23,.10);
-  white-space:nowrap;
-}
 
 .rowL, .rowR{
   border-bottom:1px solid var(--border);
@@ -811,8 +796,13 @@ function renderGantt(cards){
   document.documentElement.style.setProperty("--week", weekW + "px");
 
   const milestoneLabel = "milestones";
+  const productsLabel = "produits";
   const milestoneCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===milestoneLabel));
-  const regularCards = cards.filter(c=>!c.labels.some(l=>(l.name||"").trim().toLowerCase()===milestoneLabel));
+  const productCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===productsLabel));
+  const regularCards = cards.filter(c=>!c.labels.some(l=>{
+    const name=(l.name||"").trim().toLowerCase();
+    return name===milestoneLabel || name===productsLabel;
+  }));
 
   // group by list (still compact)
   const byList=new Map();
@@ -883,6 +873,45 @@ function renderGantt(cards){
     }
 
     rightHtml += `<div class="rowR milestoneRow">${barsHtml}</div>`;
+  }
+
+  if(productCards.length){
+    productCards.sort((a,b)=>new Date(a.start)-new Date(b.start));
+    leftHtml += `<div class="rowL" style="cursor:default; background:#fff;">
+      <div class="chev"></div>
+      <div class="title" style="font-size:11px; color:var(--muted);">Produits (${productCards.length})</div>
+      <div class="due"></div>
+    </div>`;
+
+    let barsHtml="";
+    for(const c of productCards){
+      const sx = xForDate(c.start);
+      let ex = sx;
+      let w = dayW;
+
+      if(c.end){
+        const endInc = new Date(day(new Date(c.end)).getTime() - 86400000);
+        const eIdx = diffDays(rangeStart, endInc);
+        ex = clamp(eIdx, 0, totalDays-1) * dayW;
+        w = Math.max(dayW, (ex - sx + dayW));
+      }
+
+      const fullTitle = c.title.trim().toLowerCase() === "milestones";
+      const overdue = isOverdue(c.due);
+      const barEl = c.end
+        ? `<div class="bar ${fullTitle?"full-title":""} ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+              data-has-subtasks="${c.hasSubtasks?"true":"false"}"
+              style="left:${sx}px;width:${w}px;background:${c.baseColor};color:#fff;border-color:${c.baseColor};"
+              title="${esc(c.title)}">${esc(c.title)}</div>`
+        : `<div class="milestone ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
+              data-has-subtasks="${c.hasSubtasks?"true":"false"}"
+              style="left:${sx + (dayW/2)}px;background:${c.baseColor};"
+              title="${esc(c.title)}"></div>`;
+
+      barsHtml += barEl;
+    }
+
+    rightHtml += `<div class="rowR">${barsHtml}</div>`;
   }
 
   for(const listName of listOrder){
