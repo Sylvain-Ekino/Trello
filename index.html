@@ -34,17 +34,14 @@ body{
   height:100vh;
   display:flex;
   flex-direction:column;
-  overflow:hidden; /* body does not scroll */
+  overflow:hidden; /* IMPORTANT: body does not scroll */
 }
 
 .container{width:100%;max-width:none;margin:0;padding:0 10px;}
 
 .topbar{
-  position:sticky;
-  top:0;
-  z-index:10;
-  background:#fff;
-  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:10;
+  background:#fff;border-bottom:1px solid var(--border);
   flex:0 0 auto;
 }
 .controls{display:flex;gap:8px;flex-wrap:wrap;padding:8px 0;align-items:center}
@@ -87,14 +84,16 @@ body{
 }
 .token button{height:34px}
 
-/* main area fills remaining viewport */
+/* main fills remaining viewport */
 .main{
   flex:1 1 auto;
-  min-height:0; /* crucial for nested scroll */
+  min-height:0;            /* CRITICAL */
   display:flex;
   flex-direction:column;
+  overflow:hidden;
 }
 
+/* panel fills main */
 .panel{
   margin-top:6px;
   border:1px solid var(--border);
@@ -104,13 +103,17 @@ body{
   position:relative;
 
   flex:1 1 auto;
-  min-height:0;
+  min-height:0;            /* CRITICAL */
   display:flex;
   flex-direction:column;
 }
 
 /* FullCalendar: compact + custom zoom buttons */
-#calendar{padding:2px 6px;border-bottom:1px solid var(--border);flex:0 0 auto}
+#calendar{
+  padding:2px 6px;
+  border-bottom:1px solid var(--border);
+  flex:0 0 auto;
+}
 .fc .fc-view-harness{display:none}
 .fc .fc-toolbar.fc-header-toolbar{margin:2px 0}
 .fc .fc-toolbar-title{font-size:12px;font-weight:900}
@@ -136,8 +139,8 @@ body{
 #gantt{
   padding:6px;
   flex:1 1 auto;
-  min-height:0;
-  overflow:hidden; /* only .scroll inside scrolls */
+  min-height:0;            /* CRITICAL */
+  overflow:hidden;         /* ONLY .scroll will scroll */
 }
 #kanban{
   flex:1 1 auto;
@@ -147,15 +150,16 @@ body{
   display:none;
 }
 
+/* shell fills gantt */
 .shell{
   border:1px solid var(--border);
   border-radius:12px;
   overflow:hidden;
 
   height:100%;
+  min-height:0;            /* CRITICAL */
   display:flex;
   flex-direction:column;
-  min-height:0;
 }
 .head{
   display:grid;
@@ -204,20 +208,23 @@ body{
 .daytick.we{opacity:.55}
 .datetick{color:#0f172a;opacity:.85}
 
-/* scroll area (vertical only) */
+/* the ONLY vertical scroll */
 .scroll{
   display:grid;
   grid-template-columns:var(--left) 1fr;
-  flex:1 1 auto;
-  min-height:0;
 
-  overflow-y:auto; /* the ONLY vertical scroll */
+  flex:1 1 auto;
+  min-height:0;            /* CRITICAL */
+  height:100%;             /* helps some browsers */
+  overflow-y:auto;
   overflow-x:hidden;
+  -webkit-overflow-scrolling: touch;
 }
+
 .left{border-right:1px solid var(--border);overflow:hidden}
 .right{
   position:relative;
-  overflow:hidden; /* no horizontal scroll */
+  overflow:hidden;
   background:#fff;
 }
 
@@ -240,10 +247,10 @@ body{
 .gridLine{
   position:absolute; top:0; bottom:0;
   width:1px;
-  background:rgba(2,6,23,.06); /* day lines */
+  background:rgba(2,6,23,.06);
 }
 .gridLine.week{
-  background:rgba(2,6,23,.12); /* week separators slightly stronger */
+  background:rgba(2,6,23,.12);
 }
 
 /* today line */
@@ -488,7 +495,7 @@ const API="https://api.trello.com/1";
 const TAGS_KEY="tc_selected_tags";
 const TAGS_NONE="__NONE__";
 const EXPAND_KEY="tc_expanded_cards";
-const URL_STATE_KEY="tc_url_state_v8";
+const URL_STATE_KEY="tc_url_state_v9";
 
 /* checklist cache persistent */
 const CL_CACHE_KEY="tc_checklist_cache_v1";
@@ -1037,16 +1044,14 @@ function applySelectionByKey(key){
 }
 
 /* ================= Overlays: weekend + grid (pixel-perfect) ================= */
-function renderRightOverlays(rangeStart, rangeEnd, totalDays){
+function renderRightOverlays(rangeStart, totalDays){
   const right = document.getElementById("gRight");
   if(!right) return;
 
   const weekendLayer = right.querySelector(".weekendLayer");
   const gridLayer = right.querySelector(".gridLayer");
-
   if(!weekendLayer || !gridLayer) return;
 
-  // Clear
   weekendLayer.innerHTML = "";
   gridLayer.innerHTML = "";
 
@@ -1055,7 +1060,7 @@ function renderRightOverlays(rangeStart, rangeEnd, totalDays){
   // Weekend blocks: for each Saturday, shade Saturday+Sunday
   for(let i=0;i<totalDays;i++){
     const dt = new Date(rangeStart.getTime() + i*86400000);
-    if(dt.getDay() === 6){ // Saturday
+    if(dt.getDay() === 6){
       const span = Math.min(2, totalDays - i);
       const left = Math.round((i * width) / totalDays);
       const rightX = Math.round(((i + span) * width) / totalDays);
@@ -1068,8 +1073,7 @@ function renderRightOverlays(rangeStart, rangeEnd, totalDays){
     }
   }
 
-  // Grid lines: day separators (1px) with stable pixel positions
-  // Use a map position -> isWeekSeparator
+  // Grid lines: stable pixel positions (prevents thicker random lines)
   const posMap = new Map();
   for(let i=1;i<totalDays;i++){
     const x = Math.round((i * width) / totalDays);
@@ -1078,8 +1082,6 @@ function renderRightOverlays(rangeStart, rangeEnd, totalDays){
     const prev = posMap.get(x) || false;
     posMap.set(x, prev || isWeek);
   }
-
-  // Render lines sorted by x
   const xs = [...posMap.keys()].sort((a,b)=>a-b);
   for(const x of xs){
     const line = document.createElement("div");
@@ -1092,7 +1094,7 @@ function renderRightOverlays(rangeStart, rangeEnd, totalDays){
 /* ================= GANTT RENDER ================= */
 function renderGantt(cards, homogeneousColor=null){
   const g=document.getElementById("gantt");
-  const prevScrollTop = document.querySelector(".scroll")?.scrollTop || 0;
+  const prevScrollTop = document.getElementById("roadmapScroll")?.scrollTop || 0;
 
   if(!cards.length){
     g.innerHTML = `
@@ -1104,7 +1106,6 @@ function renderGantt(cards, homogeneousColor=null){
 
   const { rangeStart, rangeEnd, totalDays } = getViewRange();
   const viewType = calendar.view.type;
-
   setPercentVars(totalDays);
 
   const milestoneLabel = "milestones";
@@ -1161,7 +1162,7 @@ function renderGantt(cards, homogeneousColor=null){
             style="left:${midPct}%;background:${color};"></div>`;
   }
 
-  // Today line (kept)
+  // Today line
   const today = day(new Date());
   let todayLine = "";
   if(today >= rangeStart && today < rangeEnd){
@@ -1249,20 +1250,19 @@ function renderGantt(cards, homogeneousColor=null){
 
       if(expanded && hasSubtasks){
         const loadedChecklists = getCachedChecklists(c.id);
-        const subtasks = loadedChecklists ? subTasksFromChecklists(c.id, loadedChecklists) : [];
+        const grouped = loadedChecklists ? subTasksByChecklist(c.id, loadedChecklists) : null;
 
         if(!loadedChecklists){
           leftHtml += `<div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-rowkey="sub:${esc(c.id)}:loading">
             <span class="dot" style="background:#cbd5e1"></span><div class="stitle">Chargement…</div><div class="sdue"></div>
           </div>`;
           rightHtml += `<div class="subR" data-rowkey="sub:${esc(c.id)}:loading"></div>`;
-        } else if(subtasks.length === 0){
+        } else if(!grouped || grouped.length === 0){
           leftHtml += `<div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-rowkey="sub:${esc(c.id)}:empty">
             <span class="dot" style="background:#cbd5e1"></span><div class="stitle">(aucune sous-tâche datée)</div><div class="sdue"></div>
           </div>`;
           rightHtml += `<div class="subR" data-rowkey="sub:${esc(c.id)}:empty"></div>`;
         } else {
-          const grouped = subTasksByChecklist(c.id, loadedChecklists);
           for(const group of grouped){
             const gkey = `check:${c.id}:${group.name||"Checklist"}`;
             leftHtml += `<div class="checkL" data-card="${esc(c.id)}" data-rowkey="${esc(gkey)}"><div class="ctitle">${esc(group.name || "Checklist")}</div></div>`;
@@ -1322,8 +1322,7 @@ function renderGantt(cards, homogeneousColor=null){
   bindGanttInteractions();
   applySelectionByKey(selectedRowKey);
 
-  // Pixel-perfect overlays (after layout)
-  requestAnimationFrame(()=>renderRightOverlays(rangeStart, rangeEnd, totalDays));
+  requestAnimationFrame(()=>renderRightOverlays(rangeStart, totalDays));
 }
 
 /* ================= INTERACTIONS ================= */
@@ -1603,10 +1602,10 @@ document.addEventListener("DOMContentLoaded",()=>{
   document.addEventListener("fullscreenchange", setFsIcon);
   setFsIcon();
 
-  // resize: re-render gantt + redraw overlays
+  // resize: re-render
   window.addEventListener("resize", ()=>{
     clearTimeout(window.__rT);
-    window.__rT=setTimeout(()=>renderGantt(filteredCards, getHomogeneousColorIfAny()), 140);
+    window.__rT=setTimeout(()=>renderGantt(filteredCards, getHomogeneousColorIfAny()), 120);
   });
 
   restoreExpanded();
