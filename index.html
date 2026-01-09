@@ -89,14 +89,6 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   );
   pointer-events:none;
 }
-.weekend{
-  position:absolute;
-  top:0; bottom:0;
-  background:rgba(148,163,184,.18);
-  pointer-events:none;
-  z-index:1;
-}
-
 /* ✅ Ligne verticale "Aujourd'hui" */
 .todayline{
   position:absolute;
@@ -845,16 +837,6 @@ function renderGantt(cards){
     todayLine = `<div class="todayline" style="left:${tx}px"></div>`;
   }
 
-  // Weekend shading
-  let weekendStripes = "";
-  for(let i=0;i<totalDays;i++){
-    const d = new Date(rangeStart.getTime() + i*86400000);
-    const dayIndex = d.getDay(); // 0=Sun,6=Sat
-    if(dayIndex === 0 || dayIndex === 6){
-      weekendStripes += `<div class="weekend" style="left:${i * dayW}px;width:${dayW}px"></div>`;
-    }
-  }
-
   if(milestoneCards.length){
     milestoneCards.sort((a,b)=>new Date(a.start)-new Date(b.start));
     leftHtml += `<div class="rowL milestoneRow" style="cursor:default; background:#fff;">
@@ -1044,7 +1026,6 @@ function renderGantt(cards){
         <div class="left" id="gLeft">${leftHtml}</div>
         <div class="right" id="gRight">
           <div style="position:relative;min-width:${minWidth}px">
-            ${weekendStripes}
             ${todayLine}
             ${rightHtml}
           </div>
