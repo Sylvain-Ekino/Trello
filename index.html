@@ -15,9 +15,11 @@
   --row:28px;
   --subrow:24px;
   --barH:14px;
-  --weekendShift:0px;
-  --day:14px;
-  --week:98px;
+
+  /* % units, set dynamically */
+  --dayp: 1%;
+  --weekp: 7%;
+  --weekendShiftP: 0%;
 }
 
 *{box-sizing:border-box}
@@ -25,67 +27,78 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .container{width:100%;max-width:none;margin:0;padding:0 10px;}
 
 .topbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border)}
-.controls{display:flex;gap:6px;flex-wrap:wrap;padding:6px 0;align-items:center}
+.controls{display:flex;gap:8px;flex-wrap:wrap;padding:8px 0;align-items:center}
 
-.chip,.seg,.btn,.token{
+.chip,.btn,.token{
   border:1px solid var(--border);
-  background:#fff;border-radius:999px;padding:4px 6px;font-weight:800;
+  background:#fff;border-radius:999px;
+  padding:6px 10px;
+  font-weight:900;
+  font-size:12px;
+  line-height:1;
+  height:34px;
+  display:inline-flex;align-items:center;gap:8px;
 }
-.chip{display:inline-flex;gap:6px;align-items:center;position:relative}
-.chip strong{font-size:11px;color:var(--muted);font-weight:900}
-.token input{border:0;outline:0;background:transparent;font-weight:900;font-size:12px;min-width:140px}
-
-.seg{display:inline-flex;gap:2px;padding:2px}
-.seg button{border:0;background:none;font-weight:900;opacity:.4;cursor:pointer}
-.seg button.active{opacity:1}
-
 .btn{cursor:pointer}
 .btn:disabled{opacity:.5;cursor:not-allowed}
-.token{display:flex;gap:4px}
-.viewtabs{display:flex;gap:4px}
+.chip strong{font-size:11px;color:var(--muted);font-weight:900}
+
+.viewtabs{display:flex;gap:6px;align-items:center}
 .viewtab{
   border:1px solid var(--border);
   background:#fff;
   border-radius:999px;
-  padding:4px 10px;
+  padding:6px 10px;
+  height:34px;
   font-weight:900;
   font-size:12px;
   cursor:pointer;
   opacity:.6;
+  display:inline-flex;align-items:center;
 }
 .viewtab.active{opacity:1}
 
+.spacer{flex:1 1 auto}
+
+.token{gap:6px}
+.token input{
+  border:0;outline:0;background:transparent;
+  font-weight:900;font-size:12px;min-width:160px;
+}
+.token button{height:34px}
+
 .panel{margin-top:6px;border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden;position:relative}
 
-/* FullCalendar: compact */
+/* FullCalendar: compact + custom zoom buttons */
 #calendar{padding:2px 6px;border-bottom:1px solid var(--border)}
 .fc .fc-view-harness{display:none}
 .fc .fc-toolbar.fc-header-toolbar{margin:2px 0}
 .fc .fc-toolbar-title{font-size:12px;font-weight:900}
-.fc .fc-button{padding:2px 6px!important;font-size:11px!important;line-height:1.1!important}
-.fc .fc-toolbar-chunk{display:flex;align-items:center;gap:4px}
+.fc .fc-button{
+  padding:4px 8px!important;
+  font-size:12px!important;
+  line-height:1!important;
+  height:28px!important;
+}
+.fc .fc-toolbar-chunk{display:flex;align-items:center;gap:6px}
 .fc .fc-button-group > .fc-button{margin:0!important}
 
 #gantt{padding:6px}
 .shell{border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .head{display:grid;grid-template-columns:var(--left) 1fr;border-bottom:1px solid var(--border)}
-.hl{border-right:1px solid var(--border);padding:4px 6px;font-size:10px;font-weight:900;color:var(--muted);display:flex;align-items:center;gap:8px}
-.hr{padding:4px 6px;overflow:hidden}
+.hl{border-right:1px solid var(--border);padding:6px 8px;font-size:10px;font-weight:900;color:var(--muted);display:flex;align-items:center}
+.hr{padding:6px 8px;overflow:hidden}
 
 /* header rows */
 .rowline{display:flex;margin-top:2px}
 .tickW{
-  width:var(--week);
+  width:var(--weekp);
   font-size:10px;
   font-weight:900;
   color:var(--muted);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
   text-align:center;
 }
 .monthTick{
-  width:var(--week);
   font-size:10px;
   font-weight:900;
   color:#0f172a;
@@ -93,13 +106,12 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-  text-align:left;
-  padding-left:6px;
+  text-align:center;
 }
 
 .dayline,.dateline{display:flex;margin-top:2px}
 .daytick,.datetick{
-  width:var(--day);
+  width:var(--dayp);
   font-size:10px;
   font-weight:900;
   color:var(--muted);
@@ -108,48 +120,56 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .daytick.we{opacity:.55}
 .datetick{color:#0f172a;opacity:.85}
 
-/* scroll area */
+/* scroll area (vertical only) */
 .scroll{
   display:grid;
   grid-template-columns:var(--left) 1fr;
   max-height:75vh;
   overflow-y:auto;
 }
-.left{border-right:1px solid var(--border);overflow:visible}
-.right{position:relative;overflow:visible}
-
-/* horizontal scroller now lives INSIDE right (so sticky can work) */
-.rightScroll{
+.left{border-right:1px solid var(--border);overflow:hidden}
+.right{
   position:relative;
-  overflow-x:auto;
-  overflow-y:visible; /* important for sticky */
-  background:repeating-linear-gradient(to right,#0001 0,#0001 1px,transparent 1px,transparent var(--day));
+  overflow:hidden; /* NO horizontal scroll ever */
+  background:repeating-linear-gradient(
+    to right,
+    #0001 0,#0001 1px,
+    transparent 1px,transparent var(--dayp)
+  );
 }
-.rightScroll::before{
+.right::before{
   content:"";position:absolute;inset:0;
-  background:repeating-linear-gradient(to right,transparent 0,transparent calc(var(--week)-1px),#0002 calc(var(--week)-1px),#0002 var(--week));
+  background:repeating-linear-gradient(
+    to right,
+    transparent 0,transparent calc(var(--weekp) - 1px),
+    #0002 calc(var(--weekp) - 1px), #0002 var(--weekp)
+  );
   pointer-events:none;
+  z-index:1;
 }
-.rightInner{position:relative}
 
-/* weekend shading overlay */
+/* weekend shading overlay (based on 7-day blocks) */
 .weekendShade{
   position:absolute; inset:0;
   background-image:linear-gradient(
     to right,
     transparent 0,
-    transparent calc(5 * var(--day)),
-    rgba(2,6,23,.06) calc(5 * var(--day)),
-    rgba(2,6,23,.06) calc(7 * var(--day))
+    transparent calc(5 * var(--dayp)),
+    rgba(2,6,23,.06) calc(5 * var(--dayp)),
+    rgba(2,6,23,.06) calc(7 * var(--dayp))
   );
-  background-size:calc(7 * var(--day)) 100%;
-  background-position:var(--weekendShift) 0;
+  background-size:calc(7 * var(--dayp)) 100%;
+  background-position:var(--weekendShiftP) 0;
   pointer-events:none;
-  z-index:1;
+  z-index:2;
 }
 
 /* today line */
-.todayline{position:absolute;top:0;bottom:0;width:2px;background:#ef4444;opacity:.65;pointer-events:none;z-index:6}
+.todayline{
+  position:absolute;top:0;bottom:0;width:2px;
+  background:#ef4444;opacity:.65;pointer-events:none;
+  z-index:6;
+}
 
 .rowL, .rowR{border-bottom:1px solid var(--border);}
 .rowL{
@@ -172,23 +192,15 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 }
 .subL .stitle{min-width:0;flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;font-weight:300;}
 .subL .sdue{flex:0 0 auto;font-size:11px;font-weight:900;color:var(--muted);}
+
 .checkL{
   display:flex;align-items:center;gap:8px;padding:0 8px 0 28px;height:var(--subrow);
   cursor:default;user-select:none;background:#f8fafc;
 }
 .checkL .ctitle{min-width:0;flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;font-weight:600;color:var(--muted);}
 
-.rowR{height:var(--row);position:relative;z-index:2}
-.subR{height:var(--subrow);position:relative;z-index:2}
-
-/* Sticky section rows (Milestones + Produits) — now should work */
-.rowL.sectionSticky1, .rowR.sectionSticky1{position:sticky;top:0;z-index:12;background:#fff;}
-.rowL.sectionSticky2, .rowR.sectionSticky2{position:sticky;top:var(--row);z-index:11;background:#fff;}
-/* small separation when sticky */
-.rowL.sectionSticky1, .rowL.sectionSticky2{box-shadow:0 8px 18px rgba(2,6,23,.06)}
-.rowR.sectionSticky1, .rowR.sectionSticky2{box-shadow:0 8px 18px rgba(2,6,23,.06)}
-
-.sectionTitle{font-size:11px;color:var(--muted);font-weight:900;}
+.rowR{height:var(--row);position:relative;z-index:3}
+.subR{height:var(--subrow);position:relative;z-index:3}
 
 .bar{
   position:absolute;height:var(--barH);border-radius:8px;padding:0 6px;
@@ -197,6 +209,7 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   box-shadow:0 10px 18px rgba(2,6,23,.10);
   border:1px solid rgba(15,23,42,.10);
   display:flex;align-items:center;justify-content:center;text-align:center;
+  z-index:5;
 }
 .bar.full-title{overflow:visible;text-overflow:clip}
 .bar.overdue,.milestone.overdue{
@@ -209,10 +222,16 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   border-radius:2px;cursor:pointer;top:50%;
   box-shadow:0 10px 18px rgba(2,6,23,.10);
   border:1px solid rgba(15,23,42,.10);
+  z-index:5;
 }
 
 /* dropdown tags */
-.ddbtn{border:0;background:transparent;font-weight:900;font-size:12px;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;max-width:220px}
+.ddbtn{
+  border:0;background:transparent;
+  font-weight:900;font-size:12px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;max-width:220px;
+  padding:0;
+}
 .ddbtn .lbl{max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ddbtn .caret{opacity:.6;font-size:11px}
 .dd{
@@ -281,11 +300,30 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   box-shadow:0 18px 45px rgba(2,6,23,.14);
 }
 
+/* KPI bar bottom */
+.kpiWrap{
+  padding:10px 0 18px;
+  display:flex;justify-content:center;
+}
 .kpi{
-  font-size:11px;font-weight:900;color:var(--muted);
-  display:inline-flex;gap:10px;align-items:center;
+  font-size:12px;font-weight:900;color:var(--muted);
+  display:inline-flex;gap:14px;align-items:center;
+  background:#fff;border:1px solid var(--border);border-radius:999px;
+  padding:8px 12px;
 }
 .kpi b{color:#0f172a}
+
+/* Fullscreen button */
+.fsBtn{
+  position:fixed;right:14px;bottom:14px;z-index:50;
+  height:40px;min-width:40px;
+  border:1px solid var(--border);background:#fff;border-radius:999px;
+  box-shadow:0 18px 45px rgba(2,6,23,.14);
+  cursor:pointer;
+  font-weight:900;font-size:12px;
+  display:flex;align-items:center;justify-content:center;
+}
+.fsBtn:active{transform:translateY(1px)}
 </style>
 </head>
 
@@ -313,21 +351,15 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
         </div>
       </div>
 
-      <div class="seg">
-        <button id="z1">1M</button>
-        <button id="z3" class="active">3M</button>
-        <button id="z6">6M</button>
-      </div>
-
       <button class="btn" id="toggleAll" title="Ouvrir/Fermer toutes les sous-tâches">Tout ouvrir</button>
-      <button class="btn" id="refresh" title="Rafraîchir">↻</button>
-      <button class="btn" id="logout" title="Oublier le token">✕</button>
 
-      <div class="chip" id="kpiChip" title="Indicateurs">
-        <span class="kpi" id="kpiText">—</span>
-      </div>
+      <div class="spacer"></div>
 
-      <div class="token">
+      <!-- Logout is left of Token module -->
+      <button class="btn" id="logout" title="Oublier le token">Oublier le token</button>
+
+      <!-- Token module on the far right -->
+      <div class="token" title="Token Trello (stocké localement)">
         <input id="tokenInput" type="password" placeholder="Token Trello"/>
         <button class="btn" id="saveToken">OK</button>
       </div>
@@ -357,7 +389,14 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
     <div id="gantt"></div>
     <div id="kanban" style="display:none;padding:8px"></div>
   </div>
+
+  <!-- KPI centered under roadmap -->
+  <div class="kpiWrap">
+    <div class="kpi" id="kpiText">—</div>
+  </div>
 </div>
+
+<button class="fsBtn" id="fsBtn" title="Plein écran">⤢</button>
 
 <script>
 /* ================= CONFIG ================= */
@@ -375,11 +414,11 @@ const API="https://api.trello.com/1";
 const TAGS_KEY="tc_selected_tags";
 const TAGS_NONE="__NONE__";
 const EXPAND_KEY="tc_expanded_cards";
-const URL_STATE_KEY="tc_url_state_v4";
+const URL_STATE_KEY="tc_url_state_v5";
 
 /* checklist cache persistent */
 const CL_CACHE_KEY="tc_checklist_cache_v1";
-const CL_TTL_MS=20*60*1000; // 20 min
+const CL_TTL_MS=20*60*1000;
 const CL_MAX_ITEMS=120;
 
 /* ================= STATE ================= */
@@ -417,14 +456,13 @@ function fmtDue(iso){
   if(Number.isNaN(d.getTime())) return "";
   return new Intl.DateTimeFormat("fr",{day:"2-digit",month:"short"}).format(d);
 }
-function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
 function isOverdue(iso){
   if(!iso) return false;
   const d=day(new Date(iso));
   return d < day(new Date());
 }
 
-/* ISO week number (FR weeks, Monday-based) */
+/* ISO week number (Mon-based) */
 function isoWeek(d){
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   const dayNum = date.getUTCDay() || 7;
@@ -487,17 +525,6 @@ function writeUrlState(){
   const next = `${location.pathname}?${p.toString()}`;
   history.replaceState(null,"",next);
   try{ localStorage.setItem(URL_STATE_KEY, next); }catch{}
-}
-
-/* ================= ZOOM BUTTONS ACTIVE STATE ================= */
-function setZoomActive(viewType){
-  const map = { multiMonth1:"z1", multiMonthQuarter:"z3", multiMonth6:"z6" };
-  const activeId = map[viewType] || "z3";
-  ["z1","z3","z6"].forEach(id=>{
-    const b=document.getElementById(id);
-    if(!b) return;
-    b.classList.toggle("active", id===activeId);
-  });
 }
 
 /* ================= TOOLTIP (checklists) ================= */
@@ -876,7 +903,7 @@ function applyFilters(){
   writeUrlState();
 }
 
-/* ================= GANTT RENDER ================= */
+/* ================= Header helpers (percent-based) ================= */
 function getViewRange(){
   const v=calendar.view;
   const rangeStart=day(v.currentStart);
@@ -884,41 +911,28 @@ function getViewRange(){
   const totalDays=Math.max(1, diffDays(rangeStart, rangeEnd));
   return { rangeStart, rangeEnd, totalDays };
 }
+function setPercentVars(totalDays, rangeStart){
+  // percent widths so it always fits 100%
+  const dayP = 100 / totalDays;
+  document.documentElement.style.setProperty("--dayp", dayP + "%");
+  document.documentElement.style.setProperty("--weekp", (dayP*7) + "%");
 
-/* compute day width so that:
-   - 1M uses full width (can be larger)
-   - 6M fits without horizontal scroll (day can be smaller)
-*/
-function computeDayWidth(totalDays, viewType){
-  const left = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--left")) || 320;
-  const usable = Math.max(280, window.innerWidth - left - 40);
-
-  if(viewType === "multiMonth6"){
-    // Fit to width: allow small pixels per day
-    return clamp(Math.floor(usable / totalDays), 3, 10);
-  }
-  if(viewType === "multiMonth1"){
-    // Fill full width, allow larger days
-    return clamp(Math.floor(usable / totalDays), 14, 44);
-  }
-  // 3M default
-  return clamp(Math.floor(usable / Math.max(20, totalDays)), 10, 24);
+  // align weekend shading based on weekday of rangeStart (Mon=0..Sun=6)
+  const dowStart = (rangeStart.getDay() + 6) % 7;
+  const shift = -(dowStart * dayP);
+  document.documentElement.style.setProperty("--weekendShiftP", shift + "%");
 }
-
-/* build month (top) + weeks (bottom) for 3M/6M */
-function buildMonthWeekHeader(rangeStart, rangeEnd, weekW){
-  // weeks: each tick is one week starting at rangeStart (not necessarily Monday, but visually consistent with grid)
+function buildMonthWeekHeader(rangeStart, rangeEnd){
   const totalDays = diffDays(rangeStart, rangeEnd);
   const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
+  const weekP = 100 / totalWeeks;
 
-  // weeks row
   const weeksHtml = Array.from({length: totalWeeks}).map((_,i)=>{
     const dt = new Date(rangeStart.getTime() + i*7*86400000);
     const w = isoWeek(dt);
-    return `<div class="tickW">S${w}</div>`;
+    return `<div class="tickW" style="width:${weekP}%">S${w}</div>`;
   }).join("");
 
-  // months row: group contiguous weeks by month of their start date
   const chunks=[];
   let i=0;
   while(i<totalWeeks){
@@ -931,18 +945,17 @@ function buildMonthWeekHeader(rangeStart, rangeEnd, weekW){
       if(dt2.getMonth()!==m || dt2.getFullYear()!==y) break;
       j++;
     }
-    const weeksCount = j - i;
-    chunks.push({label: monthLabelFR(dt), weeksCount});
+    chunks.push({label: monthLabelFR(dt), widthPct: (j-i)*weekP});
     i=j;
   }
   const monthsHtml = chunks.map(ch=>{
-    const w = ch.weeksCount * weekW;
-    return `<div class="monthTick" style="width:${w}px">${esc(ch.label)}</div>`;
+    return `<div class="monthTick" style="width:${ch.widthPct}%">${esc(ch.label)}</div>`;
   }).join("");
 
-  return { monthsHtml, weeksHtml, totalWeeks };
+  return { monthsHtml, weeksHtml };
 }
 
+/* ================= Checklist sub-tasks ================= */
 function subTasksFromChecklists(cardId, checklists){
   const items=[];
   for(const cl of (checklists||[])){
@@ -984,10 +997,10 @@ function subTasksByChecklist(cardId, checklists){
   return groups;
 }
 
+/* ================= GANTT RENDER (no horizontal scroll) ================= */
 function renderGantt(cards, homogeneousColor=null){
   const g=document.getElementById("gantt");
   const prevScrollTop = document.querySelector(".scroll")?.scrollTop || 0;
-  const prevScrollLeft = document.getElementById("gRightScroll")?.scrollLeft || 0;
 
   if(!cards.length){
     g.innerHTML = `
@@ -1000,15 +1013,9 @@ function renderGantt(cards, homogeneousColor=null){
   const { rangeStart, rangeEnd, totalDays } = getViewRange();
   const viewType = calendar.view.type;
 
-  const dayW = computeDayWidth(totalDays, viewType);
-  const weekW = dayW * 7;
-  document.documentElement.style.setProperty("--day", dayW + "px");
-  document.documentElement.style.setProperty("--week", weekW + "px");
+  setPercentVars(totalDays, rangeStart);
 
-  // align weekend shading to range start (Mon=0..Sun=6)
-  const dowStart = (rangeStart.getDay() + 6) % 7;
-  document.documentElement.style.setProperty("--weekendShift", (-dowStart * dayW) + "px");
-
+  // Labels split
   const milestoneLabel = "milestones";
   const productsLabel = "produits";
 
@@ -1029,119 +1036,115 @@ function renderGantt(cards, homogeneousColor=null){
     byList.get(k).sort((a,b)=>new Date(a.start)-new Date(b.start));
   }
 
-  // width for right side content
-  const minWidth = totalDays * dayW;
-
-  function xForDate(iso){
+  function idxForDate(iso){
     const d=day(new Date(iso));
-    const idx=diffDays(rangeStart, d);
-    return clamp(idx, 0, totalDays-1) * dayW;
+    return Math.max(0, Math.min(totalDays-1, diffDays(rangeStart, d)));
   }
+  function pctForIdx(idx){ return (idx / totalDays) * 100; }
+  function pctForSpan(days){ return (days / totalDays) * 100; }
 
   function renderBarOrMilestone(c, color){
-    const sx = xForDate(c.start);
-    let ex = sx;
-    let w = dayW;
+    const sIdx = idxForDate(c.start);
+    let spanDays = 1;
 
     if(c.end){
+      // end is exclusive on FC, inclusive on Gantt -> convert endExclusive to inclusive
       const endInc = new Date(day(new Date(c.end)).getTime() - 86400000);
-      const eIdx = diffDays(rangeStart, endInc);
-      ex = clamp(eIdx, 0, totalDays-1) * dayW;
-      w = Math.max(dayW, (ex - sx + dayW));
+      const eIdx = Math.max(0, Math.min(totalDays-1, diffDays(rangeStart, endInc)));
+      spanDays = Math.max(1, (eIdx - sIdx + 1));
     }
+
+    const leftPct = pctForIdx(sIdx);
+    const widthPct = pctForSpan(spanDays);
+    const midPct = leftPct + (widthPct/2);
 
     const fullTitle = c.title.trim().toLowerCase() === "milestones";
     const overdue = isOverdue(c.due);
 
     return c.end
-      ? `<div class="bar ${fullTitle?"full-title":""} ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
-            data-has-subtasks="${c.hasSubtasks?"true":"false"}"
-            style="left:${sx}px;width:${w}px;background:${color};color:#fff;border-color:${color};"
+      ? `<div class="bar ${fullTitle?"full-title":""} ${overdue?"overdue":""}"
+            data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}" data-has-subtasks="${c.hasSubtasks?"true":"false"}"
+            style="left:${leftPct}%;width:${widthPct}%;background:${color};color:#fff;border-color:${color};"
             title="${esc(c.title)}">${esc(c.title)}</div>`
-      : `<div class="milestone ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
-            data-has-subtasks="${c.hasSubtasks?"true":"false"}"
-            style="left:${sx + (dayW/2)}px;background:${color};"
+      : `<div class="milestone ${overdue?"overdue":""}"
+            data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}" data-has-subtasks="${c.hasSubtasks?"true":"false"}"
+            style="left:${midPct}%;background:${color};"
             title="${esc(c.title)}"></div>`;
   }
 
-  // Today line (keep)
+  // Today line (kept)
   const today = day(new Date());
   let todayLine = "";
   if(today >= rangeStart && today < rangeEnd){
     const idx = diffDays(rangeStart, today);
-    const tx = (idx * dayW) + (dayW / 2);
-    todayLine = `<div class="todayline" style="left:${tx}px"></div>`;
+    const xPct = ((idx + 0.5) / totalDays) * 100;
+    todayLine = `<div class="todayline" style="left:${xPct}%"></div>`;
   }
 
-  // Header:
-  // - 1M: no week ticks; show dates row + day letters
-  // - 3M/6M: month row + week row; and NO day row in 6M
-  const showDays = viewType !== "multiMonth6";
-  const showDates = viewType === "multiMonth1";
+  // Header rules:
+  // - 1M: dates + days, no month/week rows
+  // - 3M & 6M: month row + week row, NO day row
+  const showDates = (viewType === "multiMonth1");
+  const showDays  = (viewType === "multiMonth1");
   const showMonthWeek = (viewType === "multiMonthQuarter" || viewType === "multiMonth6");
 
   const dayLetters = ['L','M','M','J','V','S','D'];
+  const datesHtml = showDates ? Array.from({length: totalDays}).map((_,i)=>{
+    const dt = new Date(rangeStart.getTime() + i*86400000);
+    return `<div class="datetick">${String(dt.getDate()).padStart(2,"0")}</div>`;
+  }).join("") : "";
+
   const daysHtml = showDays ? Array.from({length: totalDays}).map((_,i)=>{
     const dt = new Date(rangeStart.getTime() + i*86400000);
     const di = (dt.getDay() + 6) % 7;
     const isWE = di >= 5;
     return `<div class="daytick ${isWE?'we':''}">${dayLetters[di]}</div>`;
-  }).join('') : '';
+  }).join("") : "";
 
-  const datesHtml = showDates ? Array.from({length: totalDays}).map((_,i)=>{
-    const dt = new Date(rangeStart.getTime() + i*86400000);
-    const txt = String(dt.getDate()).padStart(2,"0");
-    return `<div class="datetick">${txt}</div>`;
-  }).join('') : '';
-
-  let monthsHtml = "", weeksHtml = "";
+  let monthsHtml="", weeksHtml="";
   if(showMonthWeek){
-    const h = buildMonthWeekHeader(rangeStart, rangeEnd, weekW);
+    const h = buildMonthWeekHeader(rangeStart, rangeEnd);
     monthsHtml = h.monthsHtml;
     weeksHtml = h.weeksHtml;
   }
 
-  // Build left/right rows: ALWAYS start with Milestones + Produits sticky rows
+  // Build rows (no sticky)
   let leftHtml = "";
   let rightHtml = "";
 
-  // Milestones sticky
+  // Milestones row (always visible)
+  leftHtml += `<div class="rowL" style="cursor:default;">
+    <div class="chev"></div>
+    <div class="title" style="font-size:11px;color:var(--muted);">Milestones (${milestoneCards.length})</div>
+    <div class="due"></div>
+  </div>`;
   {
-    const count = milestoneCards.length;
-    leftHtml += `<div class="rowL sectionSticky1" style="cursor:default;">
-      <div class="chev"></div>
-      <div class="title sectionTitle">Milestones (${count})</div>
-      <div class="due"></div>
-    </div>`;
-
     let bars="";
     const sorted=[...milestoneCards].sort((a,b)=>new Date(a.start)-new Date(b.start));
     for(const c of sorted){
       const color = homogeneousColor || c.baseColor;
       bars += renderBarOrMilestone(c, color);
     }
-    rightHtml += `<div class="rowR sectionSticky1">${bars}</div>`;
+    rightHtml += `<div class="rowR">${bars}</div>`;
   }
 
-  // Produits sticky (same design)
+  // Produits row (same design)
+  leftHtml += `<div class="rowL" style="cursor:default;">
+    <div class="chev"></div>
+    <div class="title" style="font-size:11px;color:var(--muted);">Produits (${productCards.length})</div>
+    <div class="due"></div>
+  </div>`;
   {
-    const count = productCards.length;
-    leftHtml += `<div class="rowL sectionSticky2" style="cursor:default;">
-      <div class="chev"></div>
-      <div class="title sectionTitle">Produits (${count})</div>
-      <div class="due"></div>
-    </div>`;
-
     let bars="";
     const sorted=[...productCards].sort((a,b)=>new Date(a.start)-new Date(b.start));
     for(const c of sorted){
       const color = homogeneousColor || c.baseColor;
       bars += renderBarOrMilestone(c, color);
     }
-    rightHtml += `<div class="rowR sectionSticky2">${bars}</div>`;
+    rightHtml += `<div class="rowR">${bars}</div>`;
   }
 
-  // Regular cards
+  // Regular
   for(const listName of listOrder){
     for(const c of byList.get(listName)){
       const expanded = expandedCards.has(c.id);
@@ -1181,7 +1184,8 @@ function renderGantt(cards, homogeneousColor=null){
             rightHtml += `<div class="subR"></div>`;
 
             for(const st of group.items){
-              const dx = xForDate(st.due);
+              const di = idxForDate(st.due);
+              const xPct = ((di + 0.5) / totalDays) * 100;
               const dueLabel = fmtDue(st.due);
               leftHtml += `
                 <div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}" title="${esc(st.checklistName)}">
@@ -1193,7 +1197,7 @@ function renderGantt(cards, homogeneousColor=null){
               rightHtml += `
                 <div class="subR">
                   <div class="milestone ${overdueSub?"overdue":""}" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}"
-                       style="left:${dx + (dayW/2)}px;background:${color};"
+                       style="left:${xPct}%;background:${color};"
                        title="${esc(st.title)}"></div>
                 </div>`;
             }
@@ -1203,10 +1207,6 @@ function renderGantt(cards, homogeneousColor=null){
     }
   }
 
-  // Right horizontal scroll behavior:
-  // - 6M: disable horizontal scrolling (fit to width)
-  const rightOverflowX = (viewType === "multiMonth6") ? "hidden" : "auto";
-
   g.innerHTML = `
     <div class="shell">
       <div class="head">
@@ -1215,33 +1215,22 @@ function renderGantt(cards, homogeneousColor=null){
           ${showMonthWeek ? `<div class="rowline">${monthsHtml}</div>` : ``}
           ${showMonthWeek ? `<div class="rowline">${weeksHtml}</div>` : ``}
           ${showDates ? `<div class="dateline">${datesHtml}</div>` : ``}
-          ${showDays ? `<div class="dayline">${daysHtml}</div>` : ``}
+          ${showDays  ? `<div class="dayline">${daysHtml}</div>` : ``}
         </div>
       </div>
 
       <div class="scroll">
         <div class="left" id="gLeft">${leftHtml}</div>
         <div class="right" id="gRight">
-          <div class="rightScroll" id="gRightScroll" style="overflow-x:${rightOverflowX}">
-            <div class="rightInner" style="min-width:${minWidth}px">
-              <div class="weekendShade"></div>
-              ${todayLine}
-              ${rightHtml}
-            </div>
-          </div>
+          <div class="weekendShade"></div>
+          ${todayLine}
+          ${rightHtml}
         </div>
       </div>
     </div>`;
 
   const scrollEl = document.querySelector(".scroll");
   if(scrollEl) scrollEl.scrollTop = prevScrollTop;
-
-  const rightEl = document.getElementById("gRightScroll");
-  if(rightEl){
-    rightEl.scrollLeft = prevScrollLeft;
-    // In 6M, no lateral scroll => force to 0
-    if(viewType === "multiMonth6") rightEl.scrollLeft = 0;
-  }
 
   bindGanttInteractions();
 }
@@ -1411,19 +1400,18 @@ document.addEventListener("DOMContentLoaded",()=>{
       multiMonth1:{type:"multiMonth",duration:{months:1}},
       multiMonth6:{type:"multiMonth",duration:{months:6}}
     },
-    buttonText:{ today:"Aujourd'hui" },
-    headerToolbar:{left:"prev,next today",center:"title",right:""},
+    // remove "today" CTA, replace with 1M/3M/6M
+    customButtons:{
+      m1:{ text:"1M", click:()=>calendar.changeView("multiMonth1") },
+      m3:{ text:"3M", click:()=>calendar.changeView("multiMonthQuarter") },
+      m6:{ text:"6M", click:()=>calendar.changeView("multiMonth6") }
+    },
+    headerToolbar:{left:"prev,next m1,m3,m6",center:"title",right:""},
     datesSet:()=>{
-      setZoomActive(calendar.view.type);
       applyFilters();
     }
   });
   calendar.render();
-
-  // zoom buttons
-  document.getElementById("z1").onclick=()=>{ calendar.changeView("multiMonth1"); setZoomActive("multiMonth1"); writeUrlState(); };
-  document.getElementById("z3").onclick=()=>{ calendar.changeView("multiMonthQuarter"); setZoomActive("multiMonthQuarter"); writeUrlState(); };
-  document.getElementById("z6").onclick=()=>{ calendar.changeView("multiMonth6"); setZoomActive("multiMonth6"); writeUrlState(); };
 
   // banner actions
   document.getElementById("bannerClose").onclick=()=>hideBanner();
@@ -1474,7 +1462,6 @@ document.addEventListener("DOMContentLoaded",()=>{
   };
 
   // token actions
-  document.getElementById("refresh").onclick=()=>load();
   document.getElementById("logout").onclick=()=>{
     clearToken();
     hideBanner();
@@ -1518,14 +1505,33 @@ document.addEventListener("DOMContentLoaded",()=>{
   document.getElementById("tabGantt").addEventListener("click", ()=>setView("gantt"));
   document.getElementById("tabKanban").addEventListener("click", ()=>setView("kanban"));
 
-  // responsive
+  // fullscreen
+  const fsBtn=document.getElementById("fsBtn");
+  function setFsIcon(){
+    const isFs = !!document.fullscreenElement;
+    fsBtn.textContent = isFs ? "⤡" : "⤢";
+    fsBtn.title = isFs ? "Quitter le plein écran" : "Plein écran";
+  }
+  fsBtn.addEventListener("click", async ()=>{
+    try{
+      if(document.fullscreenElement){
+        await document.exitFullscreen();
+      }else{
+        await document.documentElement.requestFullscreen();
+      }
+      setFsIcon();
+    }catch{}
+  });
+  document.addEventListener("fullscreenchange", setFsIcon);
+  setFsIcon();
+
+  // responsive: re-render gantt to keep perfect alignment
   window.addEventListener("resize", ()=>{
     clearTimeout(window.__rT);
     window.__rT=setTimeout(()=>renderGantt(filteredCards, getHomogeneousColorIfAny()), 140);
   });
 
   restoreExpanded();
-  setZoomActive("multiMonthQuarter");
 
   // apply URL state if present (or last saved URL)
   (function hydrateFromUrl(){
@@ -1550,9 +1556,9 @@ document.addEventListener("DOMContentLoaded",()=>{
     if(s.zoom==="1") calendar.changeView("multiMonth1");
     else if(s.zoom==="6") calendar.changeView("multiMonth6");
     else calendar.changeView("multiMonthQuarter");
-    setZoomActive(calendar.view.type);
   })();
 
+  // initial load then hydrate tags from URL (if any)
   load().then(()=>{
     const st=readUrlState();
     if(st.tags && st.tags.length){
