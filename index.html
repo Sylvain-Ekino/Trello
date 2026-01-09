@@ -60,11 +60,9 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .panel{margin-top:6px;border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden}
 
 #calendar{padding:4px 6px;border-bottom:1px solid var(--border)}
+.fc .fc-view-harness{display:none}
 .fc .fc-toolbar-title{font-size:13px;font-weight:900}
 .fc .fc-button{padding:4px 6px!important;font-size:11px!important}
-.fc .fc-daygrid-day-number{font-size:11px;font-weight:900;color:var(--muted)}
-.fc .fc-col-header-cell-cushion{font-size:11px;font-weight:900;color:var(--muted)}
-.fc .fc-day.fc-weekend-muted{background:#f1f5f9}
 
 #gantt{padding:6px}
 .shell{border:1px solid var(--border);border-radius:12px;overflow:hidden}
@@ -89,6 +87,7 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   );
   pointer-events:none;
 }
+
 /* ✅ Ligne verticale "Aujourd'hui" */
 .todayline{
   position:absolute;
@@ -1195,11 +1194,6 @@ document.addEventListener("DOMContentLoaded",()=>{
       multiMonth1:{type:"multiMonth",duration:{months:1}},
       multiMonth6:{type:"multiMonth",duration:{months:6}}
     },
-    dayCellClassNames:(arg)=>{
-      const dayIndex = arg.date.getDay();
-      return (dayIndex === 0 || dayIndex === 6) ? ["fc-weekend-muted"] : [];
-    },
-    dayHeaderFormat:{ weekday:"short" },
     buttonText:{ today:"Aujourd'hui" },
     headerToolbar:{left:"prev,next today",center:"title",right:""},
     datesSet:()=>{
