@@ -14,9 +14,10 @@
   --left:320px;
   --row:28px;
   --subrow:24px;
-  --padY:6px;
   --barH:14px;
   --weekendShift:0px;
+  --day:14px;
+  --week:98px;
 }
 
 *{box-sizing:border-box}
@@ -64,13 +65,12 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .shell{border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .head{display:grid;grid-template-columns:var(--left) 1fr;border-bottom:1px solid var(--border)}
 .hl{border-right:1px solid var(--border);padding:4px 6px;font-size:10px;font-weight:900;color:var(--muted);display:flex;align-items:center;gap:8px}
-.hlactions{display:flex;gap:6px;margin-left:auto}
 .hr{padding:4px 6px;overflow:hidden}
 .ticks{display:flex}
 .tick{width:var(--week);font-size:10px;font-weight:900;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.days{display:flex;margin-top:2px}
-.daytick{
+.datesRow,.daysRow{display:flex;margin-top:2px}
+.daytick,.datetick{
   width:var(--day);
   font-size:10px;
   font-weight:900;
@@ -78,6 +78,7 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   text-align:center;
 }
 .daytick.we{opacity:.55}
+.datetick{color:#0f172a;opacity:.85}
 
 .scroll{display:grid;grid-template-columns:var(--left) 1fr;max-height:75vh;overflow-y:auto}
 .left{border-right:1px solid var(--border);overflow:hidden}
@@ -88,9 +89,6 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   background:repeating-linear-gradient(to right,transparent 0,transparent calc(var(--week)-1px),#0002 calc(var(--week)-1px),#0002 var(--week));
   pointer-events:none;
 }
-
-/* today line */
-.todayline{position:absolute;top:0;bottom:0;width:2px;background:#ef4444;opacity:.65;pointer-events:none;z-index:6}
 
 /* weekend shading overlay */
 .weekendShade{
@@ -108,10 +106,10 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   z-index:1;
 }
 
-.rowL, .rowR{border-bottom:1px solid var(--border);}
-.rowL.milestoneRow,.rowR.milestoneRow{position:sticky;top:0;z-index:7;background:#fff;}
-.rowR.milestoneRow{z-index:6}
+/* today line */
+.todayline{position:absolute;top:0;bottom:0;width:2px;background:#ef4444;opacity:.65;pointer-events:none;z-index:6}
 
+.rowL, .rowR{border-bottom:1px solid var(--border);}
 .rowL{
   display:flex;align-items:center;gap:8px;padding:0 8px;height:var(--row);
   cursor:pointer;user-select:none;
@@ -140,6 +138,16 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 
 .rowR{height:var(--row);position:relative;z-index:2}
 .subR{height:var(--subrow);position:relative;z-index:2}
+
+/* Sticky section rows: always present */
+.rowL.sectionSticky1, .rowR.sectionSticky1{position:sticky;top:0;z-index:9;background:#fff;}
+.rowL.sectionSticky2, .rowR.sectionSticky2{position:sticky;top:var(--row);z-index:8;background:#fff;}
+
+.sectionTitle{
+  font-size:11px;
+  color:var(--muted);
+  font-weight:900;
+}
 
 .bar{
   position:absolute;height:var(--barH);border-radius:8px;padding:0 6px;
@@ -174,10 +182,6 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   padding:6px;display:none;z-index:999;
 }
 .dd.open{display:block}
-.dd .search{
-  width:100%;border:1px solid var(--border);border-radius:10px;
-  padding:8px 10px;font-weight:900;font-size:12px;outline:none;margin:6px 0 4px;
-}
 .dd .row{display:flex;align-items:center;gap:10px;padding:8px 8px;border-radius:10px;}
 .dd .row:hover{background:#f8fafc}
 .dd input[type="checkbox"]{width:16px;height:16px}
@@ -235,6 +239,7 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   padding:10px 12px;font-weight:900;font-size:12px;
   box-shadow:0 18px 45px rgba(2,6,23,.14);
 }
+
 .kpi{
   font-size:11px;font-weight:900;color:var(--muted);
   display:inline-flex;gap:10px;align-items:center;
@@ -259,7 +264,6 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
           <span class="caret">▾</span>
         </button>
         <div class="dd" id="tagsDropdown" role="menu" aria-label="Tags">
-          <input class="search" id="tagsSearch" placeholder="Filtrer tags…" />
           <div id="tagsList"></div>
           <div class="actions">
             <button class="mini" id="tagsAll" type="button">Tous</button>
@@ -268,24 +272,18 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
         </div>
       </div>
 
-      <div class="chip">
-        <strong>Recherche</strong>
-        <input id="searchInput" placeholder="Titre ou liste…"/>
-      </div>
-
       <div class="seg">
         <button id="z1">1M</button>
         <button id="z3" class="active">3M</button>
         <button id="z6">6M</button>
       </div>
 
-      <button class="btn" id="focusToday" title="Centrer la timeline sur aujourd'hui">Aujourd’hui ↦</button>
       <button class="btn" id="toggleAll" title="Ouvrir/Fermer toutes les sous-tâches">Tout ouvrir</button>
       <button class="btn" id="refresh" title="Rafraîchir">↻</button>
       <button class="btn" id="logout" title="Oublier le token">✕</button>
 
-      <div class="chip" id="kpiChip" title="Résumé des éléments visibles">
-        <strong>Résumé</strong>
+      <!-- KPI chip: no 'Résumé', no Milestones/Produits -->
+      <div class="chip" id="kpiChip" title="Indicateurs">
         <span class="kpi" id="kpiText">—</span>
       </div>
 
@@ -337,7 +335,7 @@ const API="https://api.trello.com/1";
 const TAGS_KEY="tc_selected_tags";
 const TAGS_NONE="__NONE__";
 const EXPAND_KEY="tc_expanded_cards";
-const URL_STATE_KEY="tc_url_state_v1";
+const URL_STATE_KEY="tc_url_state_v3";
 
 /* checklist cache persistent */
 const CL_CACHE_KEY="tc_checklist_cache_v1";
@@ -385,7 +383,6 @@ function isOverdue(iso){
   const d=day(new Date(iso));
   return d < day(new Date());
 }
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 /* ================= UI: banner/loading/kpi ================= */
 const bannerEl=()=>document.getElementById("banner");
@@ -408,22 +405,17 @@ function setKpi(){
   const visible=filteredCards.length;
   const overdue=filteredCards.filter(c=>isOverdue(c.due)).length;
   const blocked=filteredBlockedCards.length;
-  const milestoneLabel = "milestones";
-  const productsLabel = "produits";
-  const miles=filteredCards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===milestoneLabel)).length;
-  const prods=filteredCards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===productsLabel)).length;
-  el.innerHTML = `<span><b>${visible}</b> visibles</span><span><b>${overdue}</b> en retard</span><span><b>${blocked}</b> bloquées</span><span><b>${miles}</b> milestones</span><span><b>${prods}</b> produits</span>`;
+  el.innerHTML = `<span><b>${visible}</b> visibles</span><span><b>${overdue}</b> en retard</span><span><b>${blocked}</b> bloquées</span>`;
 }
 
-/* ================= URL state (deep-link) ================= */
+/* ================= URL state (deep-link minimal) ================= */
 function readUrlState(){
   const p=new URLSearchParams(location.search);
-  const view=p.get("view");
-  const zoom=p.get("zoom");
-  const q=p.get("q")||"";
+  const view=p.get("view"); // gantt|kanban
+  const zoom=p.get("zoom"); // 1|3|6
   const tagsRaw=p.get("tags")||"";
   const tags = tagsRaw ? tagsRaw.split(",").map(s=>decodeURIComponent(s)) : null;
-  return {view, zoom, q, tags};
+  return {view, zoom, tags};
 }
 function writeUrlState(){
   const p=new URLSearchParams();
@@ -433,9 +425,6 @@ function writeUrlState(){
   const vt=calendar?.view?.type || "multiMonthQuarter";
   const zoom = (vt==="multiMonth1") ? "1" : (vt==="multiMonth6") ? "6" : "3";
   p.set("zoom", zoom);
-
-  const q=(document.getElementById("searchInput").value||"").trim();
-  if(q) p.set("q", q);
 
   if(tagsMode==="none"){
     p.set("tags", encodeURIComponent(TAGS_NONE));
@@ -484,9 +473,8 @@ async function fetchCardChecklists(cardId){
   const url = `${API}/cards/${encodeURIComponent(cardId)}/checklists?` + qs({key:TRELLO.key, token:token()});
   const res = await fetch(url);
   if(!res.ok){
-    const code=res.status;
     const err=new Error("Checklist fetch failed");
-    err.status=code;
+    err.status=res.status;
     throw err;
   }
   return res.json();
@@ -603,12 +591,9 @@ function setTagsBtnLabel(){
 }
 function renderTagsDropdown(){
   const listEl=document.getElementById("tagsList");
-  const q=(document.getElementById("tagsSearch").value||"").trim().toLowerCase();
   listEl.innerHTML="";
 
   for(const t of allTags){
-    if(q && !t.name.toLowerCase().includes(q)) continue;
-
     const id="tag_" + btoa(unescape(encodeURIComponent(t.name))).replaceAll("=","");
     const checked=selectedTags.has(t.name);
 
@@ -649,7 +634,6 @@ function openTags(){
   const dd=document.getElementById("tagsDropdown");
   dd.classList.add("open");
   document.getElementById("tagsBtn").setAttribute("aria-expanded","true");
-  setTimeout(()=>document.getElementById("tagsSearch").focus(), 0);
 }
 function closeTags(){
   const dd=document.getElementById("tagsDropdown");
@@ -795,6 +779,7 @@ async function load(){
 
 /* ================= FILTERS + color rules ================= */
 function getHomogeneousColorIfAny(){
+  // homogène uniquement quand EXACTEMENT 1 tag sélectionné
   if(tagsMode==="some" && selectedTags.size===1){
     const name=[...selectedTags][0];
     const tag=allTags.find(t=>t.name===name);
@@ -804,22 +789,19 @@ function getHomogeneousColorIfAny(){
 }
 
 function applyFilters(){
-  const q=(document.getElementById("searchInput").value||"").trim().toLowerCase();
   const selected=[...selectedTags];
 
   filteredCards = allCards.filter(c=>{
     const tagOK = tagsMode === "none"
       ? false
       : (selected.length===0 || c.labels.some(l=>selected.includes((l.name||"").trim())));
-    const textOK = !q || c.title.toLowerCase().includes(q) || c.list.toLowerCase().includes(q);
-    return tagOK && textOK;
+    return tagOK;
   });
   filteredBlockedCards = blockedCards.filter(c=>{
     const tagOK = tagsMode === "none"
       ? false
       : (selected.length===0 || c.labels.some(l=>selected.includes((l.name||"").trim())));
-    const textOK = !q || c.title.toLowerCase().includes(q) || c.list.toLowerCase().includes(q);
-    return tagOK && textOK;
+    return tagOK;
   });
 
   const homog = getHomogeneousColorIfAny();
@@ -855,7 +837,7 @@ function computeDayWidth(totalDays){
 function getViewRange(){
   const v=calendar.view;
   const rangeStart=day(v.currentStart);
-  const rangeEnd=day(v.currentEnd);
+  const rangeEnd=day(v.currentEnd); // exclusive
   const totalDays=Math.max(1, diffDays(rangeStart, rangeEnd));
   return { rangeStart, rangeEnd, totalDays };
 }
@@ -907,6 +889,7 @@ function renderGantt(cards, homogeneousColor=null){
   const prevScrollLeft = document.getElementById("gRight")?.scrollLeft || 0;
 
   if(!cards.length){
+    // on garde l'UI propre même sans cartes
     g.innerHTML = `
       <div class="shell" style="padding:12px;border:1px solid var(--border);border-radius:12px">
         <div style="font-weight:900;font-size:12px;color:var(--muted)">Aucune carte à afficher avec ces filtres.</div>
@@ -919,11 +902,14 @@ function renderGantt(cards, homogeneousColor=null){
   const weekW = dayW * 7;
   document.documentElement.style.setProperty("--day", dayW + "px");
   document.documentElement.style.setProperty("--week", weekW + "px");
+
+  // align weekend shading to range start (Mon=0..Sun=6)
   const dowStart = (rangeStart.getDay() + 6) % 7;
   document.documentElement.style.setProperty("--weekendShift", (-dowStart * dayW) + "px");
 
   const milestoneLabel = "milestones";
   const productsLabel = "produits";
+
   const milestoneCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===milestoneLabel));
   const productCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===productsLabel));
   const regularCards = cards.filter(c=>!c.labels.some(l=>{
@@ -941,8 +927,6 @@ function renderGantt(cards, homogeneousColor=null){
     byList.get(k).sort((a,b)=>new Date(a.start)-new Date(b.start));
   }
 
-  let leftHtml="";
-  let rightHtml="";
   const minWidth = totalDays * dayW;
 
   function xForDate(iso){
@@ -950,22 +934,6 @@ function renderGantt(cards, homogeneousColor=null){
     const idx=diffDays(rangeStart, d);
     return clamp(idx, 0, totalDays-1) * dayW;
   }
-
-  const today = day(new Date());
-  let todayLine = "";
-  if(today >= rangeStart && today < rangeEnd){
-    const idx = diffDays(rangeStart, today);
-    const tx = (idx * dayW) + (dayW / 2);
-    todayLine = `<div class="todayline" id="todayLine" style="left:${tx}px"></div>`;
-  }
-
-  const dayLetters = ['L','M','M','J','V','S','D'];
-  const daysHtml = Array.from({length: totalDays}).map((_,i)=>{
-    const dt = new Date(rangeStart.getTime() + i*86400000);
-    const di = (dt.getDay() + 6) % 7;
-    const isWE = di >= 5;
-    return `<div class="daytick ${isWE?'we':''}">${dayLetters[di]}</div>`;
-  }).join('');
 
   function renderBarOrMilestone(c, color){
     const sx = xForDate(c.start);
@@ -981,6 +949,7 @@ function renderGantt(cards, homogeneousColor=null){
 
     const fullTitle = c.title.trim().toLowerCase() === "milestones";
     const overdue = isOverdue(c.due);
+
     return c.end
       ? `<div class="bar ${fullTitle?"full-title":""} ${overdue?"overdue":""}" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
             data-has-subtasks="${c.hasSubtasks?"true":"false"}"
@@ -992,36 +961,79 @@ function renderGantt(cards, homogeneousColor=null){
             title="${esc(c.title)}"></div>`;
   }
 
-  if(milestoneCards.length){
-    milestoneCards.sort((a,b)=>new Date(a.start)-new Date(b.start));
-    leftHtml += `<div class="rowL milestoneRow" style="cursor:default;background:#fff;">
+  // Today line (keep)
+  const today = day(new Date());
+  let todayLine = "";
+  if(today >= rangeStart && today < rangeEnd){
+    const idx = diffDays(rangeStart, today);
+    const tx = (idx * dayW) + (dayW / 2);
+    todayLine = `<div class="todayline" style="left:${tx}px"></div>`;
+  }
+
+  // Header rows logic:
+  // - 6M: no days/dates
+  // - 3M: day letters (L..D)
+  // - 1M: dates row (01..31) above day letters
+  const viewType = calendar.view.type;
+  const showDays = viewType !== "multiMonth6";
+  const showDates = viewType === "multiMonth1";
+
+  const dayLetters = ['L','M','M','J','V','S','D'];
+  const daysHtml = showDays ? Array.from({length: totalDays}).map((_,i)=>{
+    const dt = new Date(rangeStart.getTime() + i*86400000);
+    const di = (dt.getDay() + 6) % 7;
+    const isWE = di >= 5;
+    return `<div class="daytick ${isWE?'we':''}">${dayLetters[di]}</div>`;
+  }).join('') : '';
+
+  const datesHtml = showDates ? Array.from({length: totalDays}).map((_,i)=>{
+    const dt = new Date(rangeStart.getTime() + i*86400000);
+    const d = dt.getDate();
+    const txt = String(d).padStart(2,"0");
+    return `<div class="datetick">${txt}</div>`;
+  }).join('') : '';
+
+  // Build left/right rows: ALWAYS start with Milestones + Produits sticky rows
+  let leftHtml = "";
+  let rightHtml = "";
+
+  // Section 1: Milestones (always visible, sticky)
+  {
+    const count = milestoneCards.length;
+    leftHtml += `<div class="rowL sectionSticky1" style="cursor:default;">
       <div class="chev"></div>
-      <div class="title" style="font-size:11px;color:var(--muted);">Milestones (${milestoneCards.length})</div>
+      <div class="title sectionTitle">Milestones (${count})</div>
       <div class="due"></div>
     </div>`;
+
     let bars="";
-    for(const c of milestoneCards){
+    const sorted=[...milestoneCards].sort((a,b)=>new Date(a.start)-new Date(b.start));
+    for(const c of sorted){
       const color = homogeneousColor || c.baseColor;
       bars += renderBarOrMilestone(c, color);
     }
-    rightHtml += `<div class="rowR milestoneRow">${bars}</div>`;
+    rightHtml += `<div class="rowR sectionSticky1">${bars}</div>`;
   }
 
-  if(productCards.length){
-    productCards.sort((a,b)=>new Date(a.start)-new Date(b.start));
-    leftHtml += `<div class="rowL" style="cursor:default;background:#fff;">
+  // Section 2: Produits (same design as Milestones, always visible, sticky)
+  {
+    const count = productCards.length;
+    leftHtml += `<div class="rowL sectionSticky2" style="cursor:default;">
       <div class="chev"></div>
-      <div class="title" style="font-size:11px;color:var(--muted);">Produits (${productCards.length})</div>
+      <div class="title sectionTitle">Produits (${count})</div>
       <div class="due"></div>
     </div>`;
+
     let bars="";
-    for(const c of productCards){
+    const sorted=[...productCards].sort((a,b)=>new Date(a.start)-new Date(b.start));
+    for(const c of sorted){
       const color = homogeneousColor || c.baseColor;
       bars += renderBarOrMilestone(c, color);
     }
-    rightHtml += `<div class="rowR">${bars}</div>`;
+    rightHtml += `<div class="rowR sectionSticky2">${bars}</div>`;
   }
 
+  // Regular cards
   for(const listName of listOrder){
     for(const c of byList.get(listName)){
       const expanded = expandedCards.has(c.id);
@@ -1086,12 +1098,7 @@ function renderGantt(cards, homogeneousColor=null){
   g.innerHTML = `
     <div class="shell">
       <div class="head">
-        <div class="hl">
-          <span style="font-weight:900;color:var(--muted);font-size:10px">Roadmap</span>
-          <div class="hlactions">
-            <button class="btn" id="miniFocus" type="button" title="Centrer sur aujourd'hui" style="padding:2px 8px;font-size:11px">↦</button>
-          </div>
-        </div>
+        <div class="hl"></div>
         <div class="hr">
           <div class="ticks">
             ${Array.from({length:Math.max(1,Math.ceil(totalDays/7))}).map((_,i)=>{
@@ -1102,7 +1109,8 @@ function renderGantt(cards, homogeneousColor=null){
               return `<div class="tick">${label}</div>`;
             }).join("")}
           </div>
-          <div class="days">${daysHtml}</div>
+          ${showDates ? `<div class="datesRow">${datesHtml}</div>` : ``}
+          ${showDays ? `<div class="daysRow">${daysHtml}</div>` : ``}
         </div>
       </div>
 
@@ -1124,7 +1132,6 @@ function renderGantt(cards, homogeneousColor=null){
   if(rightEl) rightEl.scrollLeft = prevScrollLeft;
 
   bindGanttInteractions();
-  document.getElementById("miniFocus")?.addEventListener("click", ()=>focusToday());
 }
 
 /* ================= INTERACTIONS ================= */
@@ -1139,6 +1146,7 @@ function bindGanttInteractions(){
     const kind = el.getAttribute("data-kind");
     const cardId = el.getAttribute("data-card");
 
+    // Ctrl/Cmd click => open Trello
     const isOpenShortcut = e.ctrlKey || e.metaKey;
     const url = el.getAttribute("data-url");
     if(isOpenShortcut && url){
@@ -1174,6 +1182,7 @@ function bindGanttInteractions(){
     }
   };
 
+  // Tooltip hover
   root.onmouseover = async (e)=>{
     const el = e.target.closest("[data-kind]");
     if(!el) return;
@@ -1269,8 +1278,6 @@ function setView(view){
   const calendarEl=document.getElementById("calendar");
   const tabG=document.getElementById("tabGantt");
   const tabK=document.getElementById("tabKanban");
-  const toggleAll=document.getElementById("toggleAll");
-  const focusTodayBtn=document.getElementById("focusToday");
 
   const showG = view === "gantt";
   gantt.style.display = showG ? "" : "none";
@@ -1279,20 +1286,7 @@ function setView(view){
   tabG.classList.toggle("active", showG);
   tabK.classList.toggle("active", !showG);
 
-  toggleAll.style.display = showG ? "" : "none";
-  focusTodayBtn.style.display = showG ? "" : "none";
-
   writeUrlState();
-}
-
-/* ================= Comfort: focus today ================= */
-function focusToday(){
-  const rightEl=document.getElementById("gRight");
-  const line=document.getElementById("todayLine");
-  if(!rightEl || !line) return;
-  const x = line.offsetLeft;
-  const target = Math.max(0, x - (rightEl.clientWidth/2));
-  rightEl.scrollLeft = target;
 }
 
 /* ================= INIT ================= */
@@ -1316,21 +1310,17 @@ document.addEventListener("DOMContentLoaded",()=>{
   });
   calendar.render();
 
+  // zoom buttons
   document.getElementById("z1").onclick=()=>{ calendar.changeView("multiMonth1"); setZoomActive("multiMonth1"); writeUrlState(); };
   document.getElementById("z3").onclick=()=>{ calendar.changeView("multiMonthQuarter"); setZoomActive("multiMonthQuarter"); writeUrlState(); };
   document.getElementById("z6").onclick=()=>{ calendar.changeView("multiMonth6"); setZoomActive("multiMonth6"); writeUrlState(); };
 
-  document.getElementById("searchInput").addEventListener("input", ()=>{
-    clearTimeout(window.__qT);
-    window.__qT=setTimeout(applyFilters, 90);
-  });
-
+  // banner actions
   document.getElementById("bannerClose").onclick=()=>hideBanner();
   document.getElementById("bannerRetry").onclick=()=>load();
   document.getElementById("bannerReconnect").onclick=()=>{ document.getElementById("tokenInput")?.focus(); };
 
-  document.getElementById("focusToday").onclick=()=>focusToday();
-
+  // open/close all subtasks
   const toggleBtn = document.getElementById("toggleAll");
   updateToggleBtn = function(){
     const ids = (filteredCards||[]).filter(c=>c.hasSubtasks).map(c=>c.id);
@@ -1353,11 +1343,13 @@ document.addEventListener("DOMContentLoaded",()=>{
       return;
     }
 
+    // expand all
     ids.forEach(id=>expandedCards.add(id));
     persistExpanded();
     renderGantt(filteredCards, getHomogeneousColorIfAny());
     updateToggleBtn();
 
+    // fetch missing checklists
     const toLoad = ids.filter(id=>!getCachedChecklists(id));
     if(toLoad.length>=8) setLoading(true, "Chargement des checklists…");
     await Promise.allSettled(toLoad.map(async (cardId)=>{
@@ -1373,6 +1365,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     renderGantt(filteredCards, getHomogeneousColorIfAny());
   };
 
+  // token actions
   document.getElementById("refresh").onclick=()=>load();
   document.getElementById("logout").onclick=()=>{
     clearToken();
@@ -1391,11 +1384,11 @@ document.addEventListener("DOMContentLoaded",()=>{
     load();
   };
 
+  // tags dropdown
   const btn=document.getElementById("tagsBtn");
   const dd=document.getElementById("tagsDropdown");
   btn.addEventListener("click", (e)=>{ e.stopPropagation(); toggleTags(); });
   dd.addEventListener("click", (e)=>e.stopPropagation());
-  document.getElementById("tagsSearch").addEventListener("input", ()=>renderTagsDropdown());
   document.getElementById("tagsAll").addEventListener("click", ()=>{
     tagsMode="all";
     selectedTags=new Set(allTags.map(t=>t.name));
@@ -1413,14 +1406,17 @@ document.addEventListener("DOMContentLoaded",()=>{
   document.addEventListener("click", ()=>closeTags());
   document.addEventListener("keydown", (e)=>{ if(e.key==="Escape") closeTags(); });
 
+  // view tabs
   document.getElementById("tabGantt").addEventListener("click", ()=>setView("gantt"));
   document.getElementById("tabKanban").addEventListener("click", ()=>setView("kanban"));
 
+  // responsive
   window.addEventListener("resize", ()=>{
     clearTimeout(window.__rT);
     window.__rT=setTimeout(()=>renderGantt(filteredCards, getHomogeneousColorIfAny()), 140);
   });
 
+  // restore persisted states
   restoreExpanded();
   setZoomActive("multiMonthQuarter");
 
@@ -1435,14 +1431,11 @@ document.addEventListener("DOMContentLoaded",()=>{
           ...{
             view: u.searchParams.get("view"),
             zoom: u.searchParams.get("zoom"),
-            q: u.searchParams.get("q")||"",
             tags: (u.searchParams.get("tags")||"") ? (u.searchParams.get("tags")||"").split(",").map(decodeURIComponent) : null
           }
         };
       }catch{}
     }
-
-    if(s.q) document.getElementById("searchInput").value = s.q;
 
     if(s.view==="kanban") setView("kanban");
     else setView("gantt");
@@ -1453,8 +1446,8 @@ document.addEventListener("DOMContentLoaded",()=>{
     setZoomActive(calendar.view.type);
   })();
 
-  // ✅ FIX CRITIQUE ICI : callback async (sinon SyntaxError)
-  load().then(async ()=>{
+  // load then hydrate tags from URL (if any)
+  load().then(()=>{
     const st=readUrlState();
     if(st.tags && st.tags.length){
       if(st.tags.length===1 && st.tags[0]===TAGS_NONE){
@@ -1471,11 +1464,6 @@ document.addEventListener("DOMContentLoaded",()=>{
       restoreSelectedTags();
       renderTagsDropdown();
       applyFilters();
-    }
-
-    if(document.getElementById("tabGantt").classList.contains("active")) {
-      await sleep(20);
-      focusToday();
     }
   });
 });
