@@ -16,6 +16,7 @@
   --subrow:24px;/* hauteur de ligne sous-tâche */
   --padY:6px;
   --barH:14px;
+  --weekendShift:0px;
 }
 
 *{box-sizing:border-box}
@@ -99,6 +100,34 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   z-index:5;
 }
 
+/* ✅ Week-end shading overlay (aligned to current range start) */
+.weekendShade{
+  position:absolute;
+  inset:0;
+  background-image:linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(5 * var(--day)),
+    rgba(2,6,23,.06) calc(5 * var(--day)),
+    rgba(2,6,23,.06) calc(7 * var(--day))
+  );
+  background-size:calc(7 * var(--day)) 100%;
+  background-position:var(--weekendShift) 0;
+  pointer-events:none;
+  z-index:1;
+}
+
+/* ✅ Day letters row in header */
+.days{display:flex}
+.daytick{
+  width:var(--day);
+  font-size:10px;
+  font-weight:900;
+  color:var(--muted);
+  text-align:center;
+}
+.daytick.we{opacity:.55}
+
 .rowL, .rowR{
   border-bottom:1px solid var(--border);
 }
@@ -167,10 +196,12 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .rowR{
   height:var(--row);
   position:relative;
+  z-index:2;
 }
 .subR{
   height:var(--subrow);
   position:relative;
+  z-index:2;
 }
 
 .bar{
@@ -345,6 +376,7 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
         <button id="z6">6M</button>
       </div>
 
+      <button class="btn" id="toggleAll" title="Ouvrir/Fermer toutes les sous-tâches">Tout ouvrir</button>
       <button class="btn" id="refresh">↻</button>
       <button class="btn" id="logout">✕</button>
 
@@ -377,6 +409,7 @@ const COLORS={
 const API="https://api.trello.com/1";
 
 let calendar;
+let updateToggleBtn=null;
 let allCards=[];      // source cards (already excluding 🎉 Terminé + no dates)
 let filteredCards=[]; // after tag/search filters
 let blockedCards=[];
@@ -718,6 +751,7 @@ function applyFilters(){
 
   renderGantt(filteredCards);
   renderKanban(filteredBlockedCards);
+  if(typeof updateToggleBtn === "function") updateToggleBtn();
 }
 
 /* ================= GANTT RENDER (cards + subtasks) ================= */
@@ -794,6 +828,9 @@ function renderGantt(cards){
   const weekW = dayW * 7;
   document.documentElement.style.setProperty("--day", dayW + "px");
   document.documentElement.style.setProperty("--week", weekW + "px");
+  // ✅ Align weekend shading to the visible range start (French week starts Monday)
+  const dowStart = (rangeStart.getDay() + 6) % 7; // Mon=0..Sun=6
+  document.documentElement.style.setProperty("--weekendShift", (-dowStart * dayW) + "px");
 
   const milestoneLabel = "milestones";
   const productsLabel = "produits";
@@ -835,6 +872,15 @@ function renderGantt(cards){
     const tx = (idx * dayW) + (dayW / 2);
     todayLine = `<div class="todayline" style="left:${tx}px"></div>`;
   }
+
+  // ✅ Day letters (L,M,M,J,V,S,D) for quick orientation
+  const dayLetters = ['L','M','M','J','V','S','D']; // Lun..Dim
+  const daysHtml = Array.from({length: totalDays}).map((_,i)=>{
+    const dt = new Date(rangeStart.getTime() + i*86400000);
+    const di = (dt.getDay() + 6) % 7; // Mon=0..Sun=6
+    const isWE = di >= 5;
+    return `<div class="daytick ${isWE?'we':''}">${dayLetters[di]}</div>`;
+  }).join('');
 
   if(milestoneCards.length){
     milestoneCards.sort((a,b)=>new Date(a.start)-new Date(b.start));
@@ -1018,6 +1064,7 @@ function renderGantt(cards){
               return `<div class="tick">${label}</div>`;
             }).join("")}
           </div>
+          <div class="days">${daysHtml}</div>
         </div>
       </div>
 
@@ -1025,6 +1072,7 @@ function renderGantt(cards){
         <div class="left" id="gLeft">${leftHtml}</div>
         <div class="right" id="gRight">
           <div style="position:relative;min-width:${minWidth}px">
+            <div class="weekendShade"></div>
             ${todayLine}
             ${rightHtml}
           </div>
@@ -1085,6 +1133,7 @@ function bindGanttInteractions(){
       }
 
       renderGantt(filteredCards);
+      if(typeof updateToggleBtn === "function") updateToggleBtn();
       return;
     }
   };
@@ -1223,6 +1272,57 @@ document.addEventListener("DOMContentLoaded",()=>{
     window.__qT=setTimeout(applyFilters, 80);
   });
 
+  // open/close all subtasks (does not touch filters)
+  const toggleBtn = document.getElementById("toggleAll");
+  updateToggleBtn = async function(){
+    const ids = (filteredCards||[]).filter(c=>c.hasSubtasks).map(c=>c.id);
+    if(!ids.length){ toggleBtn.style.display="none"; return; }
+    toggleBtn.style.display="";
+    const allOpen = ids.every(id=>expandedCards.has(id));
+    toggleBtn.textContent = allOpen ? "Tout fermer" : "Tout ouvrir";
+  }
+
+  toggleBtn.onclick = async ()=>{
+    const ids = (filteredCards||[]).filter(c=>c.hasSubtasks).map(c=>c.id);
+    if(!ids.length) return;
+
+    const allOpen = ids.every(id=>expandedCards.has(id));
+    if(allOpen){
+      ids.forEach(id=>expandedCards.delete(id));
+      persistExpanded();
+      renderGantt(filteredCards);
+      updateToggleBtn();
+      return;
+    }
+
+    // expand all first (fast UI), then lazy-load checklists in background and re-render once
+    ids.forEach(id=>expandedCards.add(id));
+    persistExpanded();
+    renderGantt(filteredCards);
+    updateToggleBtn();
+
+    // fetch missing checklists (only once per card)
+    const toLoad = ids.filter(id=>{
+      const cached = checklistCache.get(id);
+      return !cached || !cached.loaded;
+    });
+
+    await Promise.allSettled(toLoad.map(async (cardId)=>{
+      if(!checklistCache.has(cardId)) checklistCache.set(cardId,{loaded:false,checklists:[]});
+      const cached = checklistCache.get(cardId);
+      if(cached.loaded) return;
+      try{
+        cached.checklists = await fetchCardChecklists(cardId);
+      }catch{
+        cached.checklists = [];
+      }finally{
+        cached.loaded = true;
+      }
+    }));
+
+    renderGantt(filteredCards);
+  };
+
   // token actions
   document.getElementById("refresh").onclick=()=>load();
   document.getElementById("logout").onclick=()=>{localStorage.removeItem("trello_token"); renderGantt([]);};
@@ -1263,6 +1363,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   restoreSelectedTags();
   setTagsBtnLabel();
   setZoomActive("multiMonthQuarter");
+  if(typeof updateToggleBtn === "function") updateToggleBtn();
 
   document.getElementById("tabGantt").addEventListener("click", ()=>setView("gantt"));
   document.getElementById("tabKanban").addEventListener("click", ()=>setView("kanban"));
