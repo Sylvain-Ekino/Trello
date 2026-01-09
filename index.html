@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Trello Gantt</title>
+<title>Roadmap Volkswagen</title>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.css">
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
@@ -23,7 +23,15 @@
 }
 
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:system-ui;
+  background:var(--bg);
+  color:#0f172a;
+  overflow:hidden; /* only roadmap scrolls */
+}
+
 .container{width:100%;max-width:none;margin:0;padding:0 10px;}
 
 .topbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border)}
@@ -67,10 +75,28 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 }
 .token button{height:34px}
 
-.panel{margin-top:6px;border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden;position:relative}
+.page{
+  height:calc(100vh - 58px); /* approx topbar height; safe because topbar is sticky */
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.panel{
+  margin-top:6px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#fff;
+  overflow:hidden;
+  position:relative;
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  min-height:0; /* critical for nested scroll */
+}
 
 /* FullCalendar: compact + custom zoom buttons */
-#calendar{padding:2px 6px;border-bottom:1px solid var(--border)}
+#calendar{padding:2px 6px;border-bottom:1px solid var(--border);flex:0 0 auto}
 .fc .fc-view-harness{display:none}
 .fc .fc-toolbar.fc-header-toolbar{margin:2px 0}
 .fc .fc-toolbar-title{font-size:12px;font-weight:900}
@@ -83,9 +109,32 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .fc .fc-toolbar-chunk{display:flex;align-items:center;gap:6px}
 .fc .fc-button-group > .fc-button{margin:0!important}
 
-#gantt{padding:6px}
-.shell{border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.head{display:grid;grid-template-columns:var(--left) 1fr;border-bottom:1px solid var(--border)}
+/* active state for 1M/3M/6M */
+.fc .fc-button.is-active{
+  background:#0f172a!important;
+  border-color:#0f172a!important;
+  color:#fff!important;
+  opacity:1!important;
+}
+.fc .fc-button:not(.is-active){opacity:.75}
+
+/* Gantt wrapper fills remaining height */
+#gantt{
+  padding:6px;
+  flex:1 1 auto;
+  min-height:0;
+  overflow:hidden; /* only .scroll inside will scroll */
+}
+#kanban{
+  flex:1 1 auto;
+  min-height:0;
+  overflow:auto;
+  padding:8px;
+  display:none;
+}
+
+.shell{border:1px solid var(--border);border-radius:12px;overflow:hidden;height:100%;display:flex;flex-direction:column;min-height:0}
+.head{display:grid;grid-template-columns:var(--left) 1fr;border-bottom:1px solid var(--border);flex:0 0 auto}
 .hl{border-right:1px solid var(--border);padding:6px 8px;font-size:10px;font-weight:900;color:var(--muted);display:flex;align-items:center}
 .hr{padding:6px 8px;overflow:hidden}
 
@@ -96,7 +145,7 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   font-size:10px;
   font-weight:900;
   color:var(--muted);
-  text-align:center;
+  text-align:center; /* centered over week columns */
 }
 .monthTick{
   font-size:10px;
@@ -106,7 +155,7 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-  text-align:center;
+  text-align:center; /* centered within its span */
 }
 
 .dayline,.dateline{display:flex;margin-top:2px}
@@ -115,7 +164,7 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   font-size:10px;
   font-weight:900;
   color:var(--muted);
-  text-align:center;
+  text-align:center; /* centered over day columns */
 }
 .daytick.we{opacity:.55}
 .datetick{color:#0f172a;opacity:.85}
@@ -124,14 +173,17 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .scroll{
   display:grid;
   grid-template-columns:var(--left) 1fr;
-  max-height:75vh;
-  overflow-y:auto;
+  overflow-y:auto; /* the ONLY vertical scroll */
+  overflow-x:hidden;
+  flex:1 1 auto;
+  min-height:0;
 }
 .left{border-right:1px solid var(--border);overflow:hidden}
 .right{
   position:relative;
-  overflow:hidden; /* NO horizontal scroll ever */
-  background:repeating-linear-gradient(
+  overflow:hidden; /* NO horizontal scroll */
+  background:#fff; /* ensure weekday is white */
+  background-image:repeating-linear-gradient(
     to right,
     #0001 0,#0001 1px,
     transparent 1px,transparent var(--dayp)
@@ -145,10 +197,10 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
     #0002 calc(var(--weekp) - 1px), #0002 var(--weekp)
   );
   pointer-events:none;
-  z-index:1;
+  z-index:2; /* above weekend shading */
 }
 
-/* weekend shading overlay (based on 7-day blocks) */
+/* weekend shading overlay */
 .weekendShade{
   position:absolute; inset:0;
   background-image:linear-gradient(
@@ -161,7 +213,7 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   background-size:calc(7 * var(--dayp)) 100%;
   background-position:var(--weekendShiftP) 0;
   pointer-events:none;
-  z-index:2;
+  z-index:1; /* below week grid lines */
 }
 
 /* today line */
@@ -225,6 +277,17 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   z-index:5;
 }
 
+/* Selection highlight */
+.is-selected{
+  background:rgba(15,23,42,.06) !important;
+}
+.rowR.is-selected, .subR.is-selected{
+  background:rgba(15,23,42,.04) !important;
+}
+.rowL.is-selected, .subL.is-selected, .checkL.is-selected{
+  box-shadow: inset 3px 0 0 rgba(15,23,42,.55);
+}
+
 /* dropdown tags */
 .ddbtn{
   border:0;background:transparent;
@@ -235,7 +298,7 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .ddbtn .lbl{max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ddbtn .caret{opacity:.6;font-size:11px}
 .dd{
-  position:absolute;top: calc(100% + 6px);left:0;
+  position:absolute;top: calc(100% + 6px);
   min-width:260px;max-width:min(360px, calc(100vw - 22px));
   background:#fff;border:1px solid var(--border);border-radius:12px;
   box-shadow:0 18px 45px rgba(2,6,23,.14);
@@ -252,18 +315,6 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 
 @media (max-width: 760px){ :root{ --left: 240px; } }
 @media (max-width: 520px){ :root{ --left: 190px; } .rowL .due, .subL .sdue{display:none;} }
-
-/* tooltip */
-.tt{
-  position:fixed;z-index:999;background:#fff;border:1px solid var(--border);
-  border-radius:10px;padding:8px;font-size:12px;
-  box-shadow:0 20px 50px rgba(2,6,23,.18);
-  max-width:420px;pointer-events:none;display:none;
-}
-.tt h4{margin:0 0 4px;font-size:12px}
-.tt .meta{color:var(--muted);font-weight:900;margin-bottom:6px}
-.tt ul{margin:0;padding-left:16px}
-.tt .done{text-decoration:line-through;color:var(--muted)}
 
 /* kanban */
 .kanbanGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;}
@@ -300,10 +351,11 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   box-shadow:0 18px 45px rgba(2,6,23,.14);
 }
 
-/* KPI bar bottom */
+/* KPI bar bottom (fixed area, not scroll) */
 .kpiWrap{
-  padding:10px 0 18px;
+  padding:10px 0 14px;
   display:flex;justify-content:center;
+  flex:0 0 auto;
 }
 .kpi{
   font-size:12px;font-weight:900;color:var(--muted);
@@ -351,14 +403,12 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
         </div>
       </div>
 
-      <button class="btn" id="toggleAll" title="Ouvrir/Fermer toutes les sous-tâches">Tout ouvrir</button>
+      <button class="btn" id="toggleAll">Afficher les sous-tâches</button>
 
       <div class="spacer"></div>
 
-      <!-- Logout is left of Token module -->
       <button class="btn" id="logout" title="Oublier le token">Oublier le token</button>
 
-      <!-- Token module on the far right -->
       <div class="token" title="Token Trello (stocké localement)">
         <input id="tokenInput" type="password" placeholder="Token Trello"/>
         <button class="btn" id="saveToken">OK</button>
@@ -367,8 +417,8 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
   </div>
 </div>
 
-<div class="container">
-  <div class="panel">
+<div class="container page">
+  <div class="panel" id="panelRoot">
     <div class="banner" id="banner">
       <div class="row">
         <div class="msg" id="bannerMsg">—</div>
@@ -387,10 +437,9 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 
     <div id="calendar"></div>
     <div id="gantt"></div>
-    <div id="kanban" style="display:none;padding:8px"></div>
+    <div id="kanban"></div>
   </div>
 
-  <!-- KPI centered under roadmap -->
   <div class="kpiWrap">
     <div class="kpi" id="kpiText">—</div>
   </div>
@@ -414,7 +463,7 @@ const API="https://api.trello.com/1";
 const TAGS_KEY="tc_selected_tags";
 const TAGS_NONE="__NONE__";
 const EXPAND_KEY="tc_expanded_cards";
-const URL_STATE_KEY="tc_url_state_v5";
+const URL_STATE_KEY="tc_url_state_v6";
 
 /* checklist cache persistent */
 const CL_CACHE_KEY="tc_checklist_cache_v1";
@@ -441,6 +490,9 @@ let tagsMode="all";
 let expandedCards=new Set();
 const checklistCache=new Map();
 let checklistPersistent=new Map();
+
+/* selection */
+let selectedRowKey = null; // e.g. "card:<id>" or "sub:<subId>" or "check:<cardId>:<name>"
 
 /* ================= HELPERS ================= */
 const qs=o=>new URLSearchParams(o).toString();
@@ -492,10 +544,10 @@ function setLoading(on, text="Chargement…"){
 }
 function setKpi(){
   const el=document.getElementById("kpiText");
-  const visible=filteredCards.length;
+  const inProgress=filteredCards.length;
   const overdue=filteredCards.filter(c=>isOverdue(c.due)).length;
   const blocked=filteredBlockedCards.length;
-  el.innerHTML = `<span><b>${visible}</b> visibles</span><span><b>${overdue}</b> en retard</span><span><b>${blocked}</b> bloquées</span>`;
+  el.innerHTML = `<span><b>${inProgress}</b> en cours</span><span><b>${overdue}</b> en retard</span><span><b>${blocked}</b> bloquées</span>`;
 }
 
 /* ================= URL state (deep-link minimal) ================= */
@@ -525,56 +577,6 @@ function writeUrlState(){
   const next = `${location.pathname}?${p.toString()}`;
   history.replaceState(null,"",next);
   try{ localStorage.setItem(URL_STATE_KEY, next); }catch{}
-}
-
-/* ================= TOOLTIP (checklists) ================= */
-let ttEl=null;
-function ensureTT(){
-  if(ttEl) return ttEl;
-  ttEl=document.createElement("div");
-  ttEl.className="tt";
-  document.body.appendChild(ttEl);
-  return ttEl;
-}
-function moveTT(e){
-  if(!ttEl || ttEl.style.display==="none") return;
-  const pad=12;
-  let x=e.clientX+pad, y=e.clientY+pad;
-  const r=ttEl.getBoundingClientRect();
-  const vw=window.innerWidth, vh=window.innerHeight;
-  if(x+r.width+pad>vw) x=vw-r.width-pad;
-  if(y+r.height+pad>vh) y=vh-r.height-pad;
-  ttEl.style.left=x+"px"; ttEl.style.top=y+"px";
-}
-function hideTT(){ if(ttEl){ ttEl.style.display="none"; ttEl.innerHTML=""; } }
-
-async function fetchCardChecklists(cardId){
-  const url = `${API}/cards/${encodeURIComponent(cardId)}/checklists?` + qs({key:TRELLO.key, token:token()});
-  const res = await fetch(url);
-  if(!res.ok){
-    const err=new Error("Checklist fetch failed");
-    err.status=res.status;
-    throw err;
-  }
-  return res.json();
-}
-function renderChecklistHtml(checklists){
-  if(!checklists || checklists.length===0) return `<div class="meta">Aucune checklist</div>`;
-  const maxLists=2, maxItems=10;
-  let html="";
-  for(const cl of checklists.slice(0,maxLists)){
-    const items=(cl.checkItems||[]);
-    const done=items.filter(i=>i.state==="complete").length;
-    html += `<div class="meta"><strong>${esc(cl.name)}</strong> — ${done}/${items.length}</div>`;
-    html += "<ul>";
-    for(const it of items.slice(0,maxItems)){
-      const isDone=it.state==="complete";
-      html += `<li class="${isDone?"done":""}">${esc(it.name)}</li>`;
-    }
-    if(items.length>maxItems) html += `<li class="meta">+${items.length-maxItems}…</li>`;
-    html += "</ul>";
-  }
-  return html;
 }
 
 /* ================= persistent checklist cache ================= */
@@ -711,8 +713,15 @@ function renderTagsDropdown(){
 }
 function openTags(){
   const dd=document.getElementById("tagsDropdown");
+  const btn=document.getElementById("tagsBtn");
+  const chip=document.getElementById("tagsChip");
+
+  // Align dropdown under the button (not under the whole chip)
+  dd.style.left = btn.offsetLeft + "px";
+  dd.style.top  = (chip.offsetHeight + 6) + "px";
+
   dd.classList.add("open");
-  document.getElementById("tagsBtn").setAttribute("aria-expanded","true");
+  btn.setAttribute("aria-expanded","true");
 }
 function closeTags(){
   const dd=document.getElementById("tagsDropdown");
@@ -900,6 +909,7 @@ function applyFilters(){
 
   setKpi();
   if(typeof updateToggleBtn === "function") updateToggleBtn();
+  syncZoomButtonsActive();
   writeUrlState();
 }
 
@@ -912,12 +922,10 @@ function getViewRange(){
   return { rangeStart, rangeEnd, totalDays };
 }
 function setPercentVars(totalDays, rangeStart){
-  // percent widths so it always fits 100%
   const dayP = 100 / totalDays;
   document.documentElement.style.setProperty("--dayp", dayP + "%");
   document.documentElement.style.setProperty("--weekp", (dayP*7) + "%");
 
-  // align weekend shading based on weekday of rangeStart (Mon=0..Sun=6)
   const dowStart = (rangeStart.getDay() + 6) % 7;
   const shift = -(dowStart * dayP);
   document.documentElement.style.setProperty("--weekendShiftP", shift + "%");
@@ -997,6 +1005,23 @@ function subTasksByChecklist(cardId, checklists){
   return groups;
 }
 
+/* ================= Selection helpers ================= */
+function clearSelection(){
+  document.querySelectorAll(".is-selected").forEach(el=>el.classList.remove("is-selected"));
+}
+function applySelectionByKey(key){
+  clearSelection();
+  if(!key) return;
+  const els = document.querySelectorAll(`[data-rowkey="${CSS.escape(key)}"]`);
+  els.forEach(el=>el.classList.add("is-selected"));
+
+  // If sub selected, also lightly highlight parent card row
+  if(key.startsWith("sub:")){
+    const cardId = key.split(":")[1];
+    document.querySelectorAll(`[data-rowkey="card:${CSS.escape(cardId)}"]`).forEach(el=>el.classList.add("is-selected"));
+  }
+}
+
 /* ================= GANTT RENDER (no horizontal scroll) ================= */
 function renderGantt(cards, homogeneousColor=null){
   const g=document.getElementById("gantt");
@@ -1015,7 +1040,6 @@ function renderGantt(cards, homogeneousColor=null){
 
   setPercentVars(totalDays, rangeStart);
 
-  // Labels split
   const milestoneLabel = "milestones";
   const productsLabel = "produits";
 
@@ -1048,7 +1072,6 @@ function renderGantt(cards, homogeneousColor=null){
     let spanDays = 1;
 
     if(c.end){
-      // end is exclusive on FC, inclusive on Gantt -> convert endExclusive to inclusive
       const endInc = new Date(day(new Date(c.end)).getTime() - 86400000);
       const eIdx = Math.max(0, Math.min(totalDays-1, diffDays(rangeStart, endInc)));
       spanDays = Math.max(1, (eIdx - sIdx + 1));
@@ -1064,12 +1087,12 @@ function renderGantt(cards, homogeneousColor=null){
     return c.end
       ? `<div class="bar ${fullTitle?"full-title":""} ${overdue?"overdue":""}"
             data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}" data-has-subtasks="${c.hasSubtasks?"true":"false"}"
-            style="left:${leftPct}%;width:${widthPct}%;background:${color};color:#fff;border-color:${color};"
-            title="${esc(c.title)}">${esc(c.title)}</div>`
+            style="left:${leftPct}%;width:${widthPct}%;background:${color};color:#fff;border-color:${color};">
+            ${esc(c.title)}
+          </div>`
       : `<div class="milestone ${overdue?"overdue":""}"
             data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}" data-has-subtasks="${c.hasSubtasks?"true":"false"}"
-            style="left:${midPct}%;background:${color};"
-            title="${esc(c.title)}"></div>`;
+            style="left:${midPct}%;background:${color};"></div>`;
   }
 
   // Today line (kept)
@@ -1082,8 +1105,8 @@ function renderGantt(cards, homogeneousColor=null){
   }
 
   // Header rules:
-  // - 1M: dates + days, no month/week rows
-  // - 3M & 6M: month row + week row, NO day row
+  // - 1M: dates + days
+  // - 3M & 6M: month row + week row, no day row
   const showDates = (viewType === "multiMonth1");
   const showDays  = (viewType === "multiMonth1");
   const showMonthWeek = (viewType === "multiMonthQuarter" || viewType === "multiMonth6");
@@ -1108,12 +1131,12 @@ function renderGantt(cards, homogeneousColor=null){
     weeksHtml = h.weeksHtml;
   }
 
-  // Build rows (no sticky)
+  // Rows (no sticky)
   let leftHtml = "";
   let rightHtml = "";
 
-  // Milestones row (always visible)
-  leftHtml += `<div class="rowL" style="cursor:default;">
+  // Milestones row
+  leftHtml += `<div class="rowL" data-rowkey="card:milestones" style="cursor:default;">
     <div class="chev"></div>
     <div class="title" style="font-size:11px;color:var(--muted);">Milestones (${milestoneCards.length})</div>
     <div class="due"></div>
@@ -1125,11 +1148,11 @@ function renderGantt(cards, homogeneousColor=null){
       const color = homogeneousColor || c.baseColor;
       bars += renderBarOrMilestone(c, color);
     }
-    rightHtml += `<div class="rowR">${bars}</div>`;
+    rightHtml += `<div class="rowR" data-rowkey="card:milestones">${bars}</div>`;
   }
 
-  // Produits row (same design)
-  leftHtml += `<div class="rowL" style="cursor:default;">
+  // Produits row
+  leftHtml += `<div class="rowL" data-rowkey="card:produits" style="cursor:default;">
     <div class="chev"></div>
     <div class="title" style="font-size:11px;color:var(--muted);">Produits (${productCards.length})</div>
     <div class="due"></div>
@@ -1141,10 +1164,10 @@ function renderGantt(cards, homogeneousColor=null){
       const color = homogeneousColor || c.baseColor;
       bars += renderBarOrMilestone(c, color);
     }
-    rightHtml += `<div class="rowR">${bars}</div>`;
+    rightHtml += `<div class="rowR" data-rowkey="card:produits">${bars}</div>`;
   }
 
-  // Regular
+  // Regular cards
   for(const listName of listOrder){
     for(const c of byList.get(listName)){
       const expanded = expandedCards.has(c.id);
@@ -1152,53 +1175,55 @@ function renderGantt(cards, homogeneousColor=null){
       const chev = !hasSubtasks ? "" : (expanded ? "▾" : "▸");
       const dueTxt = fmtDue(c.due);
 
-      const titleMsg = hasSubtasks
-        ? "Clic: sous-tâches • Ctrl/Cmd+clic: ouvrir Trello"
-        : "Ctrl/Cmd+clic: ouvrir Trello";
-
       leftHtml += `
         <div class="rowL" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
-             data-has-subtasks="${hasSubtasks?"true":"false"}" title="${titleMsg}">
+             data-has-subtasks="${hasSubtasks?"true":"false"}" data-rowkey="card:${esc(c.id)}">
           <div class="chev">${chev}</div>
           <div class="title">${esc(c.title)}</div>
           <div class="due">${esc(dueTxt)}</div>
         </div>`;
 
       const color = homogeneousColor || c.baseColor;
-      rightHtml += `<div class="rowR">${renderBarOrMilestone(c, color)}</div>`;
+      rightHtml += `<div class="rowR" data-rowkey="card:${esc(c.id)}">${renderBarOrMilestone(c, color)}</div>`;
 
       if(expanded && hasSubtasks){
         const loadedChecklists = getCachedChecklists(c.id);
         const subtasks = loadedChecklists ? subTasksFromChecklists(c.id, loadedChecklists) : [];
 
         if(!loadedChecklists){
-          leftHtml += `<div class="subL" data-kind="sub" data-card="${esc(c.id)}"><span class="dot" style="background:#cbd5e1"></span><div class="stitle">Chargement…</div><div class="sdue"></div></div>`;
-          rightHtml += `<div class="subR"></div>`;
+          leftHtml += `<div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-rowkey="sub:${esc(c.id)}:loading">
+            <span class="dot" style="background:#cbd5e1"></span><div class="stitle">Chargement…</div><div class="sdue"></div>
+          </div>`;
+          rightHtml += `<div class="subR" data-rowkey="sub:${esc(c.id)}:loading"></div>`;
         } else if(subtasks.length === 0){
-          leftHtml += `<div class="subL" data-kind="sub" data-card="${esc(c.id)}"><span class="dot" style="background:#cbd5e1"></span><div class="stitle">(aucune sous-tâche datée)</div><div class="sdue"></div></div>`;
-          rightHtml += `<div class="subR"></div>`;
+          leftHtml += `<div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-rowkey="sub:${esc(c.id)}:empty">
+            <span class="dot" style="background:#cbd5e1"></span><div class="stitle">(aucune sous-tâche datée)</div><div class="sdue"></div>
+          </div>`;
+          rightHtml += `<div class="subR" data-rowkey="sub:${esc(c.id)}:empty"></div>`;
         } else {
           const grouped = subTasksByChecklist(c.id, loadedChecklists);
           for(const group of grouped){
-            leftHtml += `<div class="checkL" data-kind="checklist" data-card="${esc(c.id)}"><div class="ctitle">${esc(group.name || "Checklist")}</div></div>`;
-            rightHtml += `<div class="subR"></div>`;
+            const gkey = `check:${c.id}:${group.name||"Checklist"}`;
+            leftHtml += `<div class="checkL" data-card="${esc(c.id)}" data-rowkey="${esc(gkey)}"><div class="ctitle">${esc(group.name || "Checklist")}</div></div>`;
+            rightHtml += `<div class="subR" data-rowkey="${esc(gkey)}"></div>`;
 
             for(const st of group.items){
               const di = idxForDate(st.due);
               const xPct = ((di + 0.5) / totalDays) * 100;
               const dueLabel = fmtDue(st.due);
+              const rkey = `sub:${c.id}:${st.id}`;
+
               leftHtml += `
-                <div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}" title="${esc(st.checklistName)}">
+                <div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}" data-rowkey="${esc(rkey)}">
                   <span class="dot" style="background:${color}"></span>
                   <div class="stitle">${esc(st.title)}</div>
                   <div class="sdue">${esc(dueLabel)}</div>
                 </div>`;
               const overdueSub = isOverdue(st.due);
               rightHtml += `
-                <div class="subR">
+                <div class="subR" data-rowkey="${esc(rkey)}">
                   <div class="milestone ${overdueSub?"overdue":""}" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}"
-                       style="left:${xPct}%;background:${color};"
-                       title="${esc(st.title)}"></div>
+                       style="left:${xPct}%;background:${color};"></div>
                 </div>`;
             }
           }
@@ -1219,7 +1244,7 @@ function renderGantt(cards, homogeneousColor=null){
         </div>
       </div>
 
-      <div class="scroll">
+      <div class="scroll" id="roadmapScroll">
         <div class="left" id="gLeft">${leftHtml}</div>
         <div class="right" id="gRight">
           <div class="weekendShade"></div>
@@ -1229,24 +1254,43 @@ function renderGantt(cards, homogeneousColor=null){
       </div>
     </div>`;
 
-  const scrollEl = document.querySelector(".scroll");
+  const scrollEl = document.getElementById("roadmapScroll");
   if(scrollEl) scrollEl.scrollTop = prevScrollTop;
 
   bindGanttInteractions();
+  applySelectionByKey(selectedRowKey);
 }
 
 /* ================= INTERACTIONS ================= */
+async function ensureChecklistsLoaded(cardId){
+  const cached = getCachedChecklists(cardId);
+  if(cached) return cached;
+  try{
+    const cl = await fetchCardChecklists(cardId);
+    setCachedChecklists(cardId, cl);
+    return cl;
+  }catch(err){
+    setCachedChecklists(cardId, []);
+    if(err?.status===401 || err?.status===400){
+      showBanner("Token invalide ou expiré.", "Reconnex. avec un nouveau token.", {retry:false,reconnect:true});
+    }
+    return [];
+  }
+}
+
+function setSelectedRow(key){
+  selectedRowKey = key;
+  applySelectionByKey(key);
+}
+
 function bindGanttInteractions(){
   const root=document.getElementById("gantt");
-  root.onmousemove = (e)=>moveTT(e);
 
   root.onclick = async (e)=>{
-    const el = e.target.closest("[data-kind]");
+    const el = e.target.closest("[data-kind], .rowL, .subL");
     if(!el) return;
 
-    const kind = el.getAttribute("data-kind");
-    const cardId = el.getAttribute("data-card");
-
+    // Ctrl/Cmd click => open Trello (still allowed)
     const isOpenShortcut = e.ctrlKey || e.metaKey;
     const url = el.getAttribute("data-url");
     if(isOpenShortcut && url){
@@ -1254,26 +1298,37 @@ function bindGanttInteractions(){
       return;
     }
 
+    const kind = el.getAttribute("data-kind");
+    const cardId = el.getAttribute("data-card");
+
+    // Selection behavior
+    if(el.classList.contains("rowL") && el.getAttribute("data-rowkey")){
+      setSelectedRow(el.getAttribute("data-rowkey"));
+    }
+    if(el.classList.contains("subL") && el.getAttribute("data-rowkey")){
+      setSelectedRow(el.getAttribute("data-rowkey"));
+    }
+
+    if(kind === "sub" && cardId){
+      const subId = el.getAttribute("data-sub");
+      if(subId){
+        setSelectedRow(`sub:${cardId}:${subId}`);
+      }
+      return;
+    }
+
     if(kind === "card" && cardId){
+      setSelectedRow(`card:${cardId}`);
+
       if(el.getAttribute("data-has-subtasks") !== "true") return;
 
+      // toggle expand/collapse
       if(expandedCards.has(cardId)) expandedCards.delete(cardId);
       else expandedCards.add(cardId);
       persistExpanded();
 
       if(expandedCards.has(cardId)){
-        const cached = getCachedChecklists(cardId);
-        if(!cached){
-          try{
-            const cl = await fetchCardChecklists(cardId);
-            setCachedChecklists(cardId, cl);
-          }catch(err){
-            setCachedChecklists(cardId, []);
-            if(err?.status===401 || err?.status===400){
-              showBanner("Token invalide ou expiré.", "Reconnex. avec un nouveau token.", {retry:false,reconnect:true});
-            }
-          }
-        }
+        await ensureChecklistsLoaded(cardId);
       }
 
       renderGantt(filteredCards, getHomogeneousColorIfAny());
@@ -1281,55 +1336,6 @@ function bindGanttInteractions(){
       return;
     }
   };
-
-  root.onmouseover = async (e)=>{
-    const el = e.target.closest("[data-kind]");
-    if(!el) return;
-
-    const kind = el.getAttribute("data-kind");
-    const cardId = el.getAttribute("data-card");
-    if(!cardId || !token()) return;
-
-    const tt=ensureTT();
-    tt.style.display="block";
-    moveTT(e);
-
-    const card = allCards.find(c=>c.id===cardId) || blockedCards.find(c=>c.id===cardId);
-    const title = card?.title || "";
-    const listName = card?.list || "";
-
-    if(kind === "sub"){
-      const subId = el.getAttribute("data-sub") || "";
-      const cl = getCachedChecklists(cardId);
-      const subtasks = cl ? subTasksFromChecklists(cardId, cl) : [];
-      const st = subtasks.find(x=>x.id===subId);
-      tt.innerHTML = `<h4>${esc(st?.title || title)}</h4><div class="meta">${esc(fmtDue(st?.due || ""))}</div><div class="meta">${esc(st?.checklistName || "")}</div>`;
-      return;
-    }
-
-    tt.innerHTML = `<h4>${esc(title)}</h4><div class="meta">${esc(listName)}</div><div class="meta">Chargement…</div>`;
-
-    try{
-      const cached = getCachedChecklists(cardId);
-      if(cached){
-        tt.innerHTML = `<h4>${esc(title)}</h4><div class="meta">${esc(listName)}</div>${renderChecklistHtml(cached)}`;
-        return;
-      }
-      const cl = await fetchCardChecklists(cardId);
-      setCachedChecklists(cardId, cl);
-      tt.innerHTML = `<h4>${esc(title)}</h4><div class="meta">${esc(listName)}</div>${renderChecklistHtml(cl)}`;
-    }catch(err){
-      const s=err?.status;
-      if(s===401 || s===400){
-        tt.innerHTML = `<h4>${esc(title)}</h4><div class="meta">${esc(listName)}</div><div class="meta">Token invalide</div>`;
-        showBanner("Token invalide ou expiré.", "Reconnex. avec un nouveau token.", {retry:false,reconnect:true});
-      }else{
-        tt.innerHTML = `<h4>${esc(title)}</h4><div class="meta">${esc(listName)}</div><div class="meta">Erreur</div>`;
-      }
-    }
-  };
-
-  root.onmouseleave = ()=>hideTT();
 }
 
 /* ================= KANBAN ================= */
@@ -1388,6 +1394,18 @@ function setView(view){
   writeUrlState();
 }
 
+/* ================= FullCalendar active buttons ================= */
+function syncZoomButtonsActive(){
+  const vt = calendar?.view?.type;
+  const b1 = document.querySelector(".fc-m1-button");
+  const b3 = document.querySelector(".fc-m3-button");
+  const b6 = document.querySelector(".fc-m6-button");
+  [b1,b3,b6].forEach(b=>b && b.classList.remove("is-active"));
+  if(vt==="multiMonth1" && b1) b1.classList.add("is-active");
+  else if(vt==="multiMonth6" && b6) b6.classList.add("is-active");
+  else if(b3) b3.classList.add("is-active");
+}
+
 /* ================= INIT ================= */
 document.addEventListener("DOMContentLoaded",()=>{
   loadPersistentChecklistCache();
@@ -1400,7 +1418,6 @@ document.addEventListener("DOMContentLoaded",()=>{
       multiMonth1:{type:"multiMonth",duration:{months:1}},
       multiMonth6:{type:"multiMonth",duration:{months:6}}
     },
-    // remove "today" CTA, replace with 1M/3M/6M
     customButtons:{
       m1:{ text:"1M", click:()=>calendar.changeView("multiMonth1") },
       m3:{ text:"3M", click:()=>calendar.changeView("multiMonthQuarter") },
@@ -1409,9 +1426,11 @@ document.addEventListener("DOMContentLoaded",()=>{
     headerToolbar:{left:"prev,next m1,m3,m6",center:"title",right:""},
     datesSet:()=>{
       applyFilters();
+      syncZoomButtonsActive();
     }
   });
   calendar.render();
+  syncZoomButtonsActive();
 
   // banner actions
   document.getElementById("bannerClose").onclick=()=>hideBanner();
@@ -1422,10 +1441,14 @@ document.addEventListener("DOMContentLoaded",()=>{
   const toggleBtn = document.getElementById("toggleAll");
   updateToggleBtn = function(){
     const ids = (filteredCards||[]).filter(c=>c.hasSubtasks).map(c=>c.id);
-    if(!ids.length){ toggleBtn.disabled=true; toggleBtn.textContent="Tout ouvrir"; return; }
+    if(!ids.length){
+      toggleBtn.disabled=true;
+      toggleBtn.textContent="Afficher les sous-tâches";
+      return;
+    }
     toggleBtn.disabled=false;
     const allOpen = ids.every(id=>expandedCards.has(id));
-    toggleBtn.textContent = allOpen ? "Tout fermer" : "Tout ouvrir";
+    toggleBtn.textContent = allOpen ? "Cacher les sous-tâches" : "Afficher les sous-tâches";
   };
 
   toggleBtn.onclick = async ()=>{
@@ -1449,12 +1472,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     const toLoad = ids.filter(id=>!getCachedChecklists(id));
     if(toLoad.length>=8) setLoading(true, "Chargement des checklists…");
     await Promise.allSettled(toLoad.map(async (cardId)=>{
-      try{
-        const cl = await fetchCardChecklists(cardId);
-        setCachedChecklists(cardId, cl);
-      }catch{
-        setCachedChecklists(cardId, []);
-      }
+      await ensureChecklistsLoaded(cardId);
     }));
     if(toLoad.length>=8) setLoading(false);
 
@@ -1466,6 +1484,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     clearToken();
     hideBanner();
     allCards=[]; blockedCards=[]; filteredCards=[]; filteredBlockedCards=[];
+    selectedRowKey=null;
     renderGantt([]);
     renderKanban([]);
     setKpi();
@@ -1480,9 +1499,9 @@ document.addEventListener("DOMContentLoaded",()=>{
   };
 
   // tags dropdown
-  const btn=document.getElementById("tagsBtn");
+  const tagsBtn=document.getElementById("tagsBtn");
   const dd=document.getElementById("tagsDropdown");
-  btn.addEventListener("click", (e)=>{ e.stopPropagation(); toggleTags(); });
+  tagsBtn.addEventListener("click", (e)=>{ e.stopPropagation(); toggleTags(); });
   dd.addEventListener("click", (e)=>e.stopPropagation());
   document.getElementById("tagsAll").addEventListener("click", ()=>{
     tagsMode="all";
@@ -1514,11 +1533,8 @@ document.addEventListener("DOMContentLoaded",()=>{
   }
   fsBtn.addEventListener("click", async ()=>{
     try{
-      if(document.fullscreenElement){
-        await document.exitFullscreen();
-      }else{
-        await document.documentElement.requestFullscreen();
-      }
+      if(document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
       setFsIcon();
     }catch{}
   });
@@ -1556,6 +1572,8 @@ document.addEventListener("DOMContentLoaded",()=>{
     if(s.zoom==="1") calendar.changeView("multiMonth1");
     else if(s.zoom==="6") calendar.changeView("multiMonth6");
     else calendar.changeView("multiMonthQuarter");
+
+    syncZoomButtonsActive();
   })();
 
   // initial load then hydrate tags from URL (if any)
@@ -1579,6 +1597,18 @@ document.addEventListener("DOMContentLoaded",()=>{
     }
   });
 });
+
+/* ================= Trello checklist fetch ================= */
+async function fetchCardChecklists(cardId){
+  const url = `${API}/cards/${encodeURIComponent(cardId)}/checklists?` + qs({key:TRELLO.key, token:token()});
+  const res = await fetch(url);
+  if(!res.ok){
+    const err=new Error("Checklist fetch failed");
+    err.status=res.status;
+    throw err;
+  }
+  return res.json();
+}
 </script>
 </body>
 </html>
