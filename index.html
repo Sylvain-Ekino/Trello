@@ -34,7 +34,7 @@ body{
   height:100vh;
   display:flex;
   flex-direction:column;
-  overflow:hidden; /* IMPORTANT: body does not scroll */
+  overflow:hidden; /* body does not scroll */
 }
 
 .container{width:100%;max-width:none;margin:0;padding:0 10px;}
@@ -140,7 +140,7 @@ body{
   padding:6px;
   flex:1 1 auto;
   min-height:0;            /* CRITICAL */
-  overflow:hidden;         /* ONLY .scroll will scroll */
+  overflow:hidden;         /* ONLY inner scroll */
 }
 #kanban{
   flex:1 1 auto;
@@ -180,11 +180,13 @@ body{
 /* header rows */
 .rowline{display:flex;margin-top:2px}
 .tickW{
-  width:var(--weekp);
   font-size:10px;
   font-weight:900;
   color:var(--muted);
   text-align:center;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 .monthTick{
   font-size:10px;
@@ -195,6 +197,9 @@ body{
   overflow:hidden;
   text-overflow:ellipsis;
   text-align:center;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .dayline,.dateline{display:flex;margin-top:2px}
@@ -212,19 +217,19 @@ body{
 .scroll{
   display:grid;
   grid-template-columns:var(--left) 1fr;
-
-  flex:1 1 auto;
-  min-height:0;            /* CRITICAL */
-  height:100%;             /* helps some browsers */
+  min-height:0;
   overflow-y:auto;
   overflow-x:hidden;
   -webkit-overflow-scrolling: touch;
 }
 
-.left{border-right:1px solid var(--border);overflow:hidden}
+.left{
+  border-right:1px solid var(--border);
+  overflow:visible; /* important: do not trap wheel */
+}
 .right{
   position:relative;
-  overflow:hidden;
+  overflow:visible; /* important: do not trap wheel */
   background:#fff;
 }
 
@@ -495,7 +500,7 @@ const API="https://api.trello.com/1";
 const TAGS_KEY="tc_selected_tags";
 const TAGS_NONE="__NONE__";
 const EXPAND_KEY="tc_expanded_cards";
-const URL_STATE_KEY="tc_url_state_v9";
+const URL_STATE_KEY="tc_url_state_v10";
 
 /* checklist cache persistent */
 const CL_CACHE_KEY="tc_checklist_cache_v1";
@@ -545,6 +550,8 @@ function isOverdue(iso){
   const d=day(new Date(iso));
   return d < day(new Date());
 }
+
+/* ISO week number (Mon-based) */
 function isoWeek(d){
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   const dayNum = date.getUTCDay() || 7;
@@ -953,34 +960,54 @@ function setPercentVars(totalDays){
   document.documentElement.style.setProperty("--dayp", dayP + "%");
   document.documentElement.style.setProperty("--weekp", (dayP*7) + "%");
 }
-function buildMonthWeekHeader(rangeStart, rangeEnd){
-  const totalDays = diffDays(rangeStart, rangeEnd);
-  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
-  const weekP = 100 / totalWeeks;
 
-  const weeksHtml = Array.from({length: totalWeeks}).map((_,i)=>{
-    const dt = new Date(rangeStart.getTime() + i*7*86400000);
-    const w = isoWeek(dt);
-    return `<div class="tickW" style="width:${weekP}%">S${w}</div>`;
-  }).join("");
+/**
+ * Week header aligned to our day grid:
+ * - We build chunks of 7 days starting from rangeStart
+ * - Each chunk has width proportional to its number of days (last chunk can be shorter)
+ * -> week labels are perfectly centered over the day columns
+ */
+function buildMonthWeekHeaderAligned(rangeStart, rangeEnd){
+  const totalDays = diffDays(rangeStart, rangeEnd);
 
   const chunks=[];
-  let i=0;
-  while(i<totalWeeks){
-    const dt = new Date(rangeStart.getTime() + i*7*86400000);
-    const m = dt.getMonth();
-    const y = dt.getFullYear();
-    let j=i+1;
-    while(j<totalWeeks){
-      const dt2 = new Date(rangeStart.getTime() + j*7*86400000);
-      if(dt2.getMonth()!==m || dt2.getFullYear()!==y) break;
-      j++;
-    }
-    chunks.push({label: monthLabelFR(dt), widthPct: (j-i)*weekP});
-    i=j;
+  for(let i=0;i<totalDays;i+=7){
+    const span = Math.min(7, totalDays - i);
+    const dt = new Date(rangeStart.getTime() + i*86400000);
+    chunks.push({
+      startIndex:i,
+      spanDays:span,
+      weekNo: isoWeek(dt),
+      month: dt.getMonth(),
+      year: dt.getFullYear(),
+      monthLabel: monthLabelFR(dt)
+    });
   }
-  const monthsHtml = chunks.map(ch=>{
-    return `<div class="monthTick" style="width:${ch.widthPct}%">${esc(ch.label)}</div>`;
+
+  const weeksHtml = chunks.map(ch=>{
+    const wPct = (ch.spanDays / totalDays) * 100;
+    return `<div class="tickW" style="width:${wPct}%">S${ch.weekNo}</div>`;
+  }).join("");
+
+  // group consecutive chunks by month/year for month row
+  const monthGroups=[];
+  for(const ch of chunks){
+    const last=monthGroups[monthGroups.length-1];
+    if(last && last.month===ch.month && last.year===ch.year){
+      last.spanDays += ch.spanDays;
+    }else{
+      monthGroups.push({
+        month: ch.month,
+        year: ch.year,
+        label: ch.monthLabel,
+        spanDays: ch.spanDays
+      });
+    }
+  }
+
+  const monthsHtml = monthGroups.map(mg=>{
+    const wPct = (mg.spanDays / totalDays) * 100;
+    return `<div class="monthTick" style="width:${wPct}%">${esc(mg.label)}</div>`;
   }).join("");
 
   return { monthsHtml, weeksHtml };
@@ -1091,6 +1118,20 @@ function renderRightOverlays(rangeStart, totalDays){
   }
 }
 
+/* ================= Scroll sizing (hard fix) ================= */
+function forceRoadmapScrollHeight(){
+  const shell = document.querySelector("#gantt .shell");
+  const head = document.querySelector("#gantt .head");
+  const scroll = document.getElementById("roadmapScroll");
+  if(!shell || !head || !scroll) return;
+
+  const shellH = shell.clientHeight || 0;
+  const headH = head.offsetHeight || 0;
+  const target = Math.max(120, shellH - headH); // keep a sane minimum
+  scroll.style.height = target + "px";
+  scroll.style.overflowY = "auto";
+}
+
 /* ================= GANTT RENDER ================= */
 function renderGantt(cards, homogeneousColor=null){
   const g=document.getElementById("gantt");
@@ -1191,7 +1232,7 @@ function renderGantt(cards, homogeneousColor=null){
 
   let monthsHtml="", weeksHtml="";
   if(showMonthWeek){
-    const h = buildMonthWeekHeader(rangeStart, rangeEnd);
+    const h = buildMonthWeekHeaderAligned(rangeStart, rangeEnd);
     monthsHtml = h.monthsHtml;
     weeksHtml = h.weeksHtml;
   }
@@ -1322,7 +1363,11 @@ function renderGantt(cards, homogeneousColor=null){
   bindGanttInteractions();
   applySelectionByKey(selectedRowKey);
 
-  requestAnimationFrame(()=>renderRightOverlays(rangeStart, totalDays));
+  // Hard fixes after layout
+  requestAnimationFrame(()=>{
+    forceRoadmapScrollHeight();
+    renderRightOverlays(rangeStart, totalDays);
+  });
 }
 
 /* ================= INTERACTIONS ================= */
@@ -1490,6 +1535,8 @@ document.addEventListener("DOMContentLoaded",()=>{
     datesSet:()=>{
       applyFilters();
       syncZoomButtonsActive();
+      // ensures scroll height remains correct on view changes
+      requestAnimationFrame(forceRoadmapScrollHeight);
     }
   });
   calendar.render();
@@ -1602,10 +1649,13 @@ document.addEventListener("DOMContentLoaded",()=>{
   document.addEventListener("fullscreenchange", setFsIcon);
   setFsIcon();
 
-  // resize: re-render
+  // resize: re-render + recompute scroll height
   window.addEventListener("resize", ()=>{
     clearTimeout(window.__rT);
-    window.__rT=setTimeout(()=>renderGantt(filteredCards, getHomogeneousColorIfAny()), 120);
+    window.__rT=setTimeout(()=>{
+      renderGantt(filteredCards, getHomogeneousColorIfAny());
+      forceRoadmapScrollHeight();
+    }, 120);
   });
 
   restoreExpanded();
