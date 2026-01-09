@@ -348,8 +348,8 @@ const CL_MAX_ITEMS=120;
 let calendar;
 let updateToggleBtn=null;
 
-let allCards=[];      // source cards (excluding 🎉 Terminé + no dates except blocked)
-let filteredCards=[]; // after tag/search filters
+let allCards=[];
+let filteredCards=[];
 let blockedCards=[];
 let filteredBlockedCards=[];
 
@@ -357,13 +357,13 @@ let listNames=new Map();
 let doneListIds=new Set();
 let blockedListIds=new Set();
 
-let allTags=[];              // {name,color,hex} sorted
-let selectedTags=new Set();  // by name
-let tagsMode="all"; // all | none | some
+let allTags=[];
+let selectedTags=new Set();
+let tagsMode="all";
 
-let expandedCards=new Set(); // cardId
-const checklistCache=new Map(); // cardId -> {loaded, checklists}
-let checklistPersistent=new Map(); // cardId -> {t:number, v:any}
+let expandedCards=new Set();
+const checklistCache=new Map();
+let checklistPersistent=new Map();
 
 /* ================= HELPERS ================= */
 const qs=o=>new URLSearchParams(o).toString();
@@ -418,15 +418,14 @@ function setKpi(){
 /* ================= URL state (deep-link) ================= */
 function readUrlState(){
   const p=new URLSearchParams(location.search);
-  const view=p.get("view"); // gantt|kanban
-  const zoom=p.get("zoom"); // 1|3|6
+  const view=p.get("view");
+  const zoom=p.get("zoom");
   const q=p.get("q")||"";
-  const tagsRaw=p.get("tags")||""; // comma-separated, URI encoded by params
+  const tagsRaw=p.get("tags")||"";
   const tags = tagsRaw ? tagsRaw.split(",").map(s=>decodeURIComponent(s)) : null;
   return {view, zoom, q, tags};
 }
 function writeUrlState(){
-  // small guard: don't write if user never interacted and wants clean URL
   const p=new URLSearchParams();
   const isKanban = document.getElementById("tabKanban").classList.contains("active");
   p.set("view", isKanban ? "kanban" : "gantt");
@@ -528,7 +527,6 @@ function loadPersistentChecklistCache(){
 }
 function persistChecklistCache(){
   try{
-    // keep most recent CL_MAX_ITEMS
     const arr=[...checklistPersistent.entries()]
       .sort((a,b)=>(b[1]?.t||0)-(a[1]?.t||0))
       .slice(0, CL_MAX_ITEMS);
@@ -538,13 +536,11 @@ function persistChecklistCache(){
   }catch{}
 }
 function getCachedChecklists(cardId){
-  // priority: memory loaded cache
   const mem=checklistCache.get(cardId);
   if(mem?.loaded) return mem.checklists;
 
   const p=checklistPersistent.get(cardId);
   if(p?.v){
-    // hydrate memory cache for faster reuse
     checklistCache.set(cardId,{loaded:true,checklists:p.v});
     return p.v;
   }
@@ -703,12 +699,7 @@ async function fetchBoardCustomFields(){
   if(!res.ok){ const e=new Error("Custom fields fetch failed"); e.status=res.status; throw e; }
   return res.json();
 }
-
-function normalizeTrelloDate(iso){
-  // Trello gives ISO; we keep it but will treat as day-local when positioning.
-  // This minimizes off-by-one, because xForDate uses day(new Date(iso)).
-  return iso || null;
-}
+function normalizeTrelloDate(iso){ return iso || null; }
 
 async function load(){
   hideBanner();
@@ -796,7 +787,6 @@ async function load(){
         ? "Attends quelques secondes puis réessaie."
         : "Vérifie ta connexion réseau puis réessaie.";
     showBanner(msg, hint, {retry:!isAuth, reconnect:true});
-    // keep existing screen, but reflect KPI
     setKpi();
   }finally{
     setLoading(false);
@@ -805,8 +795,6 @@ async function load(){
 
 /* ================= FILTERS + color rules ================= */
 function getHomogeneousColorIfAny(){
-  // Spec: when a label is selected, everything uses that label’s color.
-  // We apply this strictly when EXACTLY 1 tag is selected (clear, non-surprising).
   if(tagsMode==="some" && selectedTags.size===1){
     const name=[...selectedTags][0];
     const tag=allTags.find(t=>t.name===name);
@@ -867,7 +855,7 @@ function computeDayWidth(totalDays){
 function getViewRange(){
   const v=calendar.view;
   const rangeStart=day(v.currentStart);
-  const rangeEnd=day(v.currentEnd); // exclusive
+  const rangeEnd=day(v.currentEnd);
   const totalDays=Math.max(1, diffDays(rangeStart, rangeEnd));
   return { rangeStart, rangeEnd, totalDays };
 }
@@ -931,7 +919,7 @@ function renderGantt(cards, homogeneousColor=null){
   const weekW = dayW * 7;
   document.documentElement.style.setProperty("--day", dayW + "px");
   document.documentElement.style.setProperty("--week", weekW + "px");
-  const dowStart = (rangeStart.getDay() + 6) % 7; // Mon=0..Sun=6
+  const dowStart = (rangeStart.getDay() + 6) % 7;
   document.documentElement.style.setProperty("--weekendShift", (-dowStart * dayW) + "px");
 
   const milestoneLabel = "milestones";
@@ -963,7 +951,6 @@ function renderGantt(cards, homogeneousColor=null){
     return clamp(idx, 0, totalDays-1) * dayW;
   }
 
-  // today line
   const today = day(new Date());
   let todayLine = "";
   if(today >= rangeStart && today < rangeEnd){
@@ -972,7 +959,6 @@ function renderGantt(cards, homogeneousColor=null){
     todayLine = `<div class="todayline" id="todayLine" style="left:${tx}px"></div>`;
   }
 
-  // day letters
   const dayLetters = ['L','M','M','J','V','S','D'];
   const daysHtml = Array.from({length: totalDays}).map((_,i)=>{
     const dt = new Date(rangeStart.getTime() + i*86400000);
@@ -1138,7 +1124,6 @@ function renderGantt(cards, homogeneousColor=null){
   if(rightEl) rightEl.scrollLeft = prevScrollLeft;
 
   bindGanttInteractions();
-  // mini focus button inside header
   document.getElementById("miniFocus")?.addEventListener("click", ()=>focusToday());
 }
 
@@ -1168,7 +1153,6 @@ function bindGanttInteractions(){
       else expandedCards.add(cardId);
       persistExpanded();
 
-      // expand -> lazy load (with persistent cache)
       if(expandedCards.has(cardId)){
         const cached = getCachedChecklists(cardId);
         if(!cached){
@@ -1176,7 +1160,6 @@ function bindGanttInteractions(){
             const cl = await fetchCardChecklists(cardId);
             setCachedChecklists(cardId, cl);
           }catch(err){
-            // fallback: empty but mark loaded to avoid infinite “Chargement…”
             setCachedChecklists(cardId, []);
             if(err?.status===401 || err?.status===400){
               showBanner("Token invalide ou expiré.", "Reconnex. avec un nouveau token.", {retry:false,reconnect:true});
@@ -1296,7 +1279,6 @@ function setView(view){
   tabG.classList.toggle("active", showG);
   tabK.classList.toggle("active", !showG);
 
-  // CTA relevants
   toggleAll.style.display = showG ? "" : "none";
   focusTodayBtn.style.display = showG ? "" : "none";
 
@@ -1308,7 +1290,6 @@ function focusToday(){
   const rightEl=document.getElementById("gRight");
   const line=document.getElementById("todayLine");
   if(!rightEl || !line) return;
-  // center the red line in viewport
   const x = line.offsetLeft;
   const target = Math.max(0, x - (rightEl.clientWidth/2));
   rightEl.scrollLeft = target;
@@ -1335,29 +1316,21 @@ document.addEventListener("DOMContentLoaded",()=>{
   });
   calendar.render();
 
-  // zoom buttons
   document.getElementById("z1").onclick=()=>{ calendar.changeView("multiMonth1"); setZoomActive("multiMonth1"); writeUrlState(); };
   document.getElementById("z3").onclick=()=>{ calendar.changeView("multiMonthQuarter"); setZoomActive("multiMonthQuarter"); writeUrlState(); };
   document.getElementById("z6").onclick=()=>{ calendar.changeView("multiMonth6"); setZoomActive("multiMonth6"); writeUrlState(); };
 
-  // search
   document.getElementById("searchInput").addEventListener("input", ()=>{
     clearTimeout(window.__qT);
     window.__qT=setTimeout(applyFilters, 90);
   });
 
-  // banner actions
   document.getElementById("bannerClose").onclick=()=>hideBanner();
   document.getElementById("bannerRetry").onclick=()=>load();
-  document.getElementById("bannerReconnect").onclick=()=>{
-    // open token area visually by focusing input
-    document.getElementById("tokenInput")?.focus();
-  };
+  document.getElementById("bannerReconnect").onclick=()=>{ document.getElementById("tokenInput")?.focus(); };
 
-  // focus today
   document.getElementById("focusToday").onclick=()=>focusToday();
 
-  // open/close all subtasks (does not touch filters)
   const toggleBtn = document.getElementById("toggleAll");
   updateToggleBtn = function(){
     const ids = (filteredCards||[]).filter(c=>c.hasSubtasks).map(c=>c.id);
@@ -1380,13 +1353,11 @@ document.addEventListener("DOMContentLoaded",()=>{
       return;
     }
 
-    // expand all
     ids.forEach(id=>expandedCards.add(id));
     persistExpanded();
     renderGantt(filteredCards, getHomogeneousColorIfAny());
     updateToggleBtn();
 
-    // load missing checklists with gentle loading indicator only if many
     const toLoad = ids.filter(id=>!getCachedChecklists(id));
     if(toLoad.length>=8) setLoading(true, "Chargement des checklists…");
     await Promise.allSettled(toLoad.map(async (cardId)=>{
@@ -1402,7 +1373,6 @@ document.addEventListener("DOMContentLoaded",()=>{
     renderGantt(filteredCards, getHomogeneousColorIfAny());
   };
 
-  // token actions
   document.getElementById("refresh").onclick=()=>load();
   document.getElementById("logout").onclick=()=>{
     clearToken();
@@ -1421,7 +1391,6 @@ document.addEventListener("DOMContentLoaded",()=>{
     load();
   };
 
-  // tags dropdown
   const btn=document.getElementById("tagsBtn");
   const dd=document.getElementById("tagsDropdown");
   btn.addEventListener("click", (e)=>{ e.stopPropagation(); toggleTags(); });
@@ -1444,17 +1413,14 @@ document.addEventListener("DOMContentLoaded",()=>{
   document.addEventListener("click", ()=>closeTags());
   document.addEventListener("keydown", (e)=>{ if(e.key==="Escape") closeTags(); });
 
-  // view tabs
   document.getElementById("tabGantt").addEventListener("click", ()=>setView("gantt"));
   document.getElementById("tabKanban").addEventListener("click", ()=>setView("kanban"));
 
-  // responsive
   window.addEventListener("resize", ()=>{
     clearTimeout(window.__rT);
     window.__rT=setTimeout(()=>renderGantt(filteredCards, getHomogeneousColorIfAny()), 140);
   });
 
-  // restore persisted states
   restoreExpanded();
   setZoomActive("multiMonthQuarter");
 
@@ -1466,7 +1432,12 @@ document.addEventListener("DOMContentLoaded",()=>{
         const u=new URL(localStorage.getItem(URL_STATE_KEY), location.origin);
         s = {
           ...s,
-          ...{view: u.searchParams.get("view"), zoom: u.searchParams.get("zoom"), q: u.searchParams.get("q")||"", tags: (u.searchParams.get("tags")||"") ? (u.searchParams.get("tags")||"").split(",").map(decodeURIComponent) : null}
+          ...{
+            view: u.searchParams.get("view"),
+            zoom: u.searchParams.get("zoom"),
+            q: u.searchParams.get("q")||"",
+            tags: (u.searchParams.get("tags")||"") ? (u.searchParams.get("tags")||"").split(",").map(decodeURIComponent) : null
+          }
         };
       }catch{}
     }
@@ -1480,13 +1451,10 @@ document.addEventListener("DOMContentLoaded",()=>{
     else if(s.zoom==="6") calendar.changeView("multiMonth6");
     else calendar.changeView("multiMonthQuarter");
     setZoomActive(calendar.view.type);
-
-    // tags are restored after load() because allTags is built from cards
   })();
 
-  // kick-off
-  load().then(()=>{
-    // after tags exist, re-hydrate tags from URL (if any)
+  // ✅ FIX CRITIQUE ICI : callback async (sinon SyntaxError)
+  load().then(async ()=>{
     const st=readUrlState();
     if(st.tags && st.tags.length){
       if(st.tags.length===1 && st.tags[0]===TAGS_NONE){
@@ -1505,7 +1473,6 @@ document.addEventListener("DOMContentLoaded",()=>{
       applyFilters();
     }
 
-    // optional: focus today once at first load in gantt
     if(document.getElementById("tabGantt").classList.contains("active")) {
       await sleep(20);
       focusToday();
