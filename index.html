@@ -60,9 +60,11 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .panel{margin-top:6px;border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden}
 
 #calendar{padding:4px 6px;border-bottom:1px solid var(--border)}
-.fc .fc-view-harness{display:none}
 .fc .fc-toolbar-title{font-size:13px;font-weight:900}
 .fc .fc-button{padding:4px 6px!important;font-size:11px!important}
+.fc .fc-daygrid-day-number{font-size:11px;font-weight:900;color:var(--muted)}
+.fc .fc-col-header-cell-cushion{font-size:11px;font-weight:900;color:var(--muted)}
+.fc .fc-day.fc-weekend-muted{background:#f1f5f9}
 
 #gantt{padding:6px}
 .shell{border:1px solid var(--border);border-radius:12px;overflow:hidden}
@@ -86,6 +88,13 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
     #0002 var(--week)
   );
   pointer-events:none;
+}
+.weekend{
+  position:absolute;
+  top:0; bottom:0;
+  background:rgba(148,163,184,.18);
+  pointer-events:none;
+  z-index:1;
 }
 
 /* ✅ Ligne verticale "Aujourd'hui" */
@@ -836,6 +845,16 @@ function renderGantt(cards){
     todayLine = `<div class="todayline" style="left:${tx}px"></div>`;
   }
 
+  // Weekend shading
+  let weekendStripes = "";
+  for(let i=0;i<totalDays;i++){
+    const d = new Date(rangeStart.getTime() + i*86400000);
+    const dayIndex = d.getDay(); // 0=Sun,6=Sat
+    if(dayIndex === 0 || dayIndex === 6){
+      weekendStripes += `<div class="weekend" style="left:${i * dayW}px;width:${dayW}px"></div>`;
+    }
+  }
+
   if(milestoneCards.length){
     milestoneCards.sort((a,b)=>new Date(a.start)-new Date(b.start));
     leftHtml += `<div class="rowL milestoneRow" style="cursor:default; background:#fff;">
@@ -1025,6 +1044,7 @@ function renderGantt(cards){
         <div class="left" id="gLeft">${leftHtml}</div>
         <div class="right" id="gRight">
           <div style="position:relative;min-width:${minWidth}px">
+            ${weekendStripes}
             ${todayLine}
             ${rightHtml}
           </div>
@@ -1194,6 +1214,11 @@ document.addEventListener("DOMContentLoaded",()=>{
       multiMonth1:{type:"multiMonth",duration:{months:1}},
       multiMonth6:{type:"multiMonth",duration:{months:6}}
     },
+    dayCellClassNames:(arg)=>{
+      const dayIndex = arg.date.getDay();
+      return (dayIndex === 0 || dayIndex === 6) ? ["fc-weekend-muted"] : [];
+    },
+    dayHeaderFormat:{ weekday:"short" },
     buttonText:{ today:"Aujourd'hui" },
     headerToolbar:{left:"prev,next today",center:"title",right:""},
     datesSet:()=>{
