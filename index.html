@@ -33,7 +33,7 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 }
 .chip{display:inline-flex;gap:6px;align-items:center;position:relative}
 .chip strong{font-size:11px;color:var(--muted);font-weight:900}
-.chip input,.token input{border:0;outline:0;background:transparent;font-weight:900;font-size:12px;min-width:140px}
+.token input{border:0;outline:0;background:transparent;font-weight:900;font-size:12px;min-width:140px}
 
 .seg{display:inline-flex;gap:2px;padding:2px}
 .seg button{border:0;background:none;font-weight:900;opacity:.4;cursor:pointer}
@@ -56,20 +56,48 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .viewtab.active{opacity:1}
 
 .panel{margin-top:6px;border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden;position:relative}
-#calendar{padding:4px 6px;border-bottom:1px solid var(--border)}
+
+/* FullCalendar: compact */
+#calendar{padding:2px 6px;border-bottom:1px solid var(--border)}
 .fc .fc-view-harness{display:none}
-.fc .fc-toolbar-title{font-size:13px;font-weight:900}
-.fc .fc-button{padding:4px 6px!important;font-size:11px!important}
+.fc .fc-toolbar.fc-header-toolbar{margin:2px 0}
+.fc .fc-toolbar-title{font-size:12px;font-weight:900}
+.fc .fc-button{padding:2px 6px!important;font-size:11px!important;line-height:1.1!important}
+.fc .fc-toolbar-chunk{display:flex;align-items:center;gap:4px}
+.fc .fc-button-group > .fc-button{margin:0!important}
 
 #gantt{padding:6px}
 .shell{border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .head{display:grid;grid-template-columns:var(--left) 1fr;border-bottom:1px solid var(--border)}
 .hl{border-right:1px solid var(--border);padding:4px 6px;font-size:10px;font-weight:900;color:var(--muted);display:flex;align-items:center;gap:8px}
 .hr{padding:4px 6px;overflow:hidden}
-.ticks{display:flex}
-.tick{width:var(--week);font-size:10px;font-weight:900;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.datesRow,.daysRow{display:flex;margin-top:2px}
+/* header rows */
+.rowline{display:flex;margin-top:2px}
+.tickW{
+  width:var(--week);
+  font-size:10px;
+  font-weight:900;
+  color:var(--muted);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  text-align:center;
+}
+.monthTick{
+  width:var(--week);
+  font-size:10px;
+  font-weight:900;
+  color:#0f172a;
+  opacity:.85;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  text-align:left;
+  padding-left:6px;
+}
+
+.dayline,.dateline{display:flex;margin-top:2px}
 .daytick,.datetick{
   width:var(--day);
   font-size:10px;
@@ -80,15 +108,29 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .daytick.we{opacity:.55}
 .datetick{color:#0f172a;opacity:.85}
 
-.scroll{display:grid;grid-template-columns:var(--left) 1fr;max-height:75vh;overflow-y:auto}
-.left{border-right:1px solid var(--border);overflow:hidden}
-.right{position:relative;overflow-x:auto;overflow-y:hidden;
-  background:repeating-linear-gradient(to right,#0001 0,#0001 1px,transparent 1px,transparent var(--day))}
-.right::before{
+/* scroll area */
+.scroll{
+  display:grid;
+  grid-template-columns:var(--left) 1fr;
+  max-height:75vh;
+  overflow-y:auto;
+}
+.left{border-right:1px solid var(--border);overflow:visible}
+.right{position:relative;overflow:visible}
+
+/* horizontal scroller now lives INSIDE right (so sticky can work) */
+.rightScroll{
+  position:relative;
+  overflow-x:auto;
+  overflow-y:visible; /* important for sticky */
+  background:repeating-linear-gradient(to right,#0001 0,#0001 1px,transparent 1px,transparent var(--day));
+}
+.rightScroll::before{
   content:"";position:absolute;inset:0;
   background:repeating-linear-gradient(to right,transparent 0,transparent calc(var(--week)-1px),#0002 calc(var(--week)-1px),#0002 var(--week));
   pointer-events:none;
 }
+.rightInner{position:relative}
 
 /* weekend shading overlay */
 .weekendShade{
@@ -139,15 +181,14 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
 .rowR{height:var(--row);position:relative;z-index:2}
 .subR{height:var(--subrow);position:relative;z-index:2}
 
-/* Sticky section rows: always present */
-.rowL.sectionSticky1, .rowR.sectionSticky1{position:sticky;top:0;z-index:9;background:#fff;}
-.rowL.sectionSticky2, .rowR.sectionSticky2{position:sticky;top:var(--row);z-index:8;background:#fff;}
+/* Sticky section rows (Milestones + Produits) — now should work */
+.rowL.sectionSticky1, .rowR.sectionSticky1{position:sticky;top:0;z-index:12;background:#fff;}
+.rowL.sectionSticky2, .rowR.sectionSticky2{position:sticky;top:var(--row);z-index:11;background:#fff;}
+/* small separation when sticky */
+.rowL.sectionSticky1, .rowL.sectionSticky2{box-shadow:0 8px 18px rgba(2,6,23,.06)}
+.rowR.sectionSticky1, .rowR.sectionSticky2{box-shadow:0 8px 18px rgba(2,6,23,.06)}
 
-.sectionTitle{
-  font-size:11px;
-  color:var(--muted);
-  font-weight:900;
-}
+.sectionTitle{font-size:11px;color:var(--muted);font-weight:900;}
 
 .bar{
   position:absolute;height:var(--barH);border-radius:8px;padding:0 6px;
@@ -282,7 +323,6 @@ body{margin:0;font-family:system-ui;background:var(--bg);color:#0f172a}
       <button class="btn" id="refresh" title="Rafraîchir">↻</button>
       <button class="btn" id="logout" title="Oublier le token">✕</button>
 
-      <!-- KPI chip: no 'Résumé', no Milestones/Produits -->
       <div class="chip" id="kpiChip" title="Indicateurs">
         <span class="kpi" id="kpiText">—</span>
       </div>
@@ -335,7 +375,7 @@ const API="https://api.trello.com/1";
 const TAGS_KEY="tc_selected_tags";
 const TAGS_NONE="__NONE__";
 const EXPAND_KEY="tc_expanded_cards";
-const URL_STATE_KEY="tc_url_state_v3";
+const URL_STATE_KEY="tc_url_state_v4";
 
 /* checklist cache persistent */
 const CL_CACHE_KEY="tc_checklist_cache_v1";
@@ -384,6 +424,18 @@ function isOverdue(iso){
   return d < day(new Date());
 }
 
+/* ISO week number (FR weeks, Monday-based) */
+function isoWeek(d){
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1)/7);
+}
+function monthLabelFR(dt){
+  return new Intl.DateTimeFormat("fr",{month:"long"}).format(dt);
+}
+
 /* ================= UI: banner/loading/kpi ================= */
 const bannerEl=()=>document.getElementById("banner");
 function showBanner(msg, hint="", {retry=true,reconnect=true}={}){
@@ -411,8 +463,8 @@ function setKpi(){
 /* ================= URL state (deep-link minimal) ================= */
 function readUrlState(){
   const p=new URLSearchParams(location.search);
-  const view=p.get("view"); // gantt|kanban
-  const zoom=p.get("zoom"); // 1|3|6
+  const view=p.get("view");
+  const zoom=p.get("zoom");
   const tagsRaw=p.get("tags")||"";
   const tags = tagsRaw ? tagsRaw.split(",").map(s=>decodeURIComponent(s)) : null;
   return {view, zoom, tags};
@@ -779,7 +831,6 @@ async function load(){
 
 /* ================= FILTERS + color rules ================= */
 function getHomogeneousColorIfAny(){
-  // homogène uniquement quand EXACTEMENT 1 tag sélectionné
   if(tagsMode==="some" && selectedTags.size===1){
     const name=[...selectedTags][0];
     const tag=allTags.find(t=>t.name===name);
@@ -826,20 +877,70 @@ function applyFilters(){
 }
 
 /* ================= GANTT RENDER ================= */
-function computeDayWidth(totalDays){
-  const usable = Math.max(
-    320,
-    window.innerWidth - (parseInt(getComputedStyle(document.documentElement).getPropertyValue("--left")) || 320) - 60
-  );
-  const base = Math.floor(usable / Math.max(20, totalDays));
-  return clamp(base, 10, 24);
-}
 function getViewRange(){
   const v=calendar.view;
   const rangeStart=day(v.currentStart);
   const rangeEnd=day(v.currentEnd); // exclusive
   const totalDays=Math.max(1, diffDays(rangeStart, rangeEnd));
   return { rangeStart, rangeEnd, totalDays };
+}
+
+/* compute day width so that:
+   - 1M uses full width (can be larger)
+   - 6M fits without horizontal scroll (day can be smaller)
+*/
+function computeDayWidth(totalDays, viewType){
+  const left = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--left")) || 320;
+  const usable = Math.max(280, window.innerWidth - left - 40);
+
+  if(viewType === "multiMonth6"){
+    // Fit to width: allow small pixels per day
+    return clamp(Math.floor(usable / totalDays), 3, 10);
+  }
+  if(viewType === "multiMonth1"){
+    // Fill full width, allow larger days
+    return clamp(Math.floor(usable / totalDays), 14, 44);
+  }
+  // 3M default
+  return clamp(Math.floor(usable / Math.max(20, totalDays)), 10, 24);
+}
+
+/* build month (top) + weeks (bottom) for 3M/6M */
+function buildMonthWeekHeader(rangeStart, rangeEnd, weekW){
+  // weeks: each tick is one week starting at rangeStart (not necessarily Monday, but visually consistent with grid)
+  const totalDays = diffDays(rangeStart, rangeEnd);
+  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
+
+  // weeks row
+  const weeksHtml = Array.from({length: totalWeeks}).map((_,i)=>{
+    const dt = new Date(rangeStart.getTime() + i*7*86400000);
+    const w = isoWeek(dt);
+    return `<div class="tickW">S${w}</div>`;
+  }).join("");
+
+  // months row: group contiguous weeks by month of their start date
+  const chunks=[];
+  let i=0;
+  while(i<totalWeeks){
+    const dt = new Date(rangeStart.getTime() + i*7*86400000);
+    const m = dt.getMonth();
+    const y = dt.getFullYear();
+    let j=i+1;
+    while(j<totalWeeks){
+      const dt2 = new Date(rangeStart.getTime() + j*7*86400000);
+      if(dt2.getMonth()!==m || dt2.getFullYear()!==y) break;
+      j++;
+    }
+    const weeksCount = j - i;
+    chunks.push({label: monthLabelFR(dt), weeksCount});
+    i=j;
+  }
+  const monthsHtml = chunks.map(ch=>{
+    const w = ch.weeksCount * weekW;
+    return `<div class="monthTick" style="width:${w}px">${esc(ch.label)}</div>`;
+  }).join("");
+
+  return { monthsHtml, weeksHtml, totalWeeks };
 }
 
 function subTasksFromChecklists(cardId, checklists){
@@ -886,10 +987,9 @@ function subTasksByChecklist(cardId, checklists){
 function renderGantt(cards, homogeneousColor=null){
   const g=document.getElementById("gantt");
   const prevScrollTop = document.querySelector(".scroll")?.scrollTop || 0;
-  const prevScrollLeft = document.getElementById("gRight")?.scrollLeft || 0;
+  const prevScrollLeft = document.getElementById("gRightScroll")?.scrollLeft || 0;
 
   if(!cards.length){
-    // on garde l'UI propre même sans cartes
     g.innerHTML = `
       <div class="shell" style="padding:12px;border:1px solid var(--border);border-radius:12px">
         <div style="font-weight:900;font-size:12px;color:var(--muted)">Aucune carte à afficher avec ces filtres.</div>
@@ -898,7 +998,9 @@ function renderGantt(cards, homogeneousColor=null){
   }
 
   const { rangeStart, rangeEnd, totalDays } = getViewRange();
-  const dayW = computeDayWidth(totalDays);
+  const viewType = calendar.view.type;
+
+  const dayW = computeDayWidth(totalDays, viewType);
   const weekW = dayW * 7;
   document.documentElement.style.setProperty("--day", dayW + "px");
   document.documentElement.style.setProperty("--week", weekW + "px");
@@ -927,6 +1029,7 @@ function renderGantt(cards, homogeneousColor=null){
     byList.get(k).sort((a,b)=>new Date(a.start)-new Date(b.start));
   }
 
+  // width for right side content
   const minWidth = totalDays * dayW;
 
   function xForDate(iso){
@@ -970,13 +1073,12 @@ function renderGantt(cards, homogeneousColor=null){
     todayLine = `<div class="todayline" style="left:${tx}px"></div>`;
   }
 
-  // Header rows logic:
-  // - 6M: no days/dates
-  // - 3M: day letters (L..D)
-  // - 1M: dates row (01..31) above day letters
-  const viewType = calendar.view.type;
+  // Header:
+  // - 1M: no week ticks; show dates row + day letters
+  // - 3M/6M: month row + week row; and NO day row in 6M
   const showDays = viewType !== "multiMonth6";
   const showDates = viewType === "multiMonth1";
+  const showMonthWeek = (viewType === "multiMonthQuarter" || viewType === "multiMonth6");
 
   const dayLetters = ['L','M','M','J','V','S','D'];
   const daysHtml = showDays ? Array.from({length: totalDays}).map((_,i)=>{
@@ -988,16 +1090,22 @@ function renderGantt(cards, homogeneousColor=null){
 
   const datesHtml = showDates ? Array.from({length: totalDays}).map((_,i)=>{
     const dt = new Date(rangeStart.getTime() + i*86400000);
-    const d = dt.getDate();
-    const txt = String(d).padStart(2,"0");
+    const txt = String(dt.getDate()).padStart(2,"0");
     return `<div class="datetick">${txt}</div>`;
   }).join('') : '';
+
+  let monthsHtml = "", weeksHtml = "";
+  if(showMonthWeek){
+    const h = buildMonthWeekHeader(rangeStart, rangeEnd, weekW);
+    monthsHtml = h.monthsHtml;
+    weeksHtml = h.weeksHtml;
+  }
 
   // Build left/right rows: ALWAYS start with Milestones + Produits sticky rows
   let leftHtml = "";
   let rightHtml = "";
 
-  // Section 1: Milestones (always visible, sticky)
+  // Milestones sticky
   {
     const count = milestoneCards.length;
     leftHtml += `<div class="rowL sectionSticky1" style="cursor:default;">
@@ -1015,7 +1123,7 @@ function renderGantt(cards, homogeneousColor=null){
     rightHtml += `<div class="rowR sectionSticky1">${bars}</div>`;
   }
 
-  // Section 2: Produits (same design as Milestones, always visible, sticky)
+  // Produits sticky (same design)
   {
     const count = productCards.length;
     leftHtml += `<div class="rowL sectionSticky2" style="cursor:default;">
@@ -1095,32 +1203,31 @@ function renderGantt(cards, homogeneousColor=null){
     }
   }
 
+  // Right horizontal scroll behavior:
+  // - 6M: disable horizontal scrolling (fit to width)
+  const rightOverflowX = (viewType === "multiMonth6") ? "hidden" : "auto";
+
   g.innerHTML = `
     <div class="shell">
       <div class="head">
         <div class="hl"></div>
         <div class="hr">
-          <div class="ticks">
-            ${Array.from({length:Math.max(1,Math.ceil(totalDays/7))}).map((_,i)=>{
-              const dt = new Date(rangeStart.getTime() + i*7*86400000);
-              const label = ["multiMonth1","multiMonthQuarter"].includes(calendar.view.type)
-                ? new Intl.DateTimeFormat("fr",{day:"2-digit",month:"short"}).format(dt)
-                : `S${i+1}`;
-              return `<div class="tick">${label}</div>`;
-            }).join("")}
-          </div>
-          ${showDates ? `<div class="datesRow">${datesHtml}</div>` : ``}
-          ${showDays ? `<div class="daysRow">${daysHtml}</div>` : ``}
+          ${showMonthWeek ? `<div class="rowline">${monthsHtml}</div>` : ``}
+          ${showMonthWeek ? `<div class="rowline">${weeksHtml}</div>` : ``}
+          ${showDates ? `<div class="dateline">${datesHtml}</div>` : ``}
+          ${showDays ? `<div class="dayline">${daysHtml}</div>` : ``}
         </div>
       </div>
 
       <div class="scroll">
         <div class="left" id="gLeft">${leftHtml}</div>
         <div class="right" id="gRight">
-          <div style="position:relative;min-width:${minWidth}px">
-            <div class="weekendShade"></div>
-            ${todayLine}
-            ${rightHtml}
+          <div class="rightScroll" id="gRightScroll" style="overflow-x:${rightOverflowX}">
+            <div class="rightInner" style="min-width:${minWidth}px">
+              <div class="weekendShade"></div>
+              ${todayLine}
+              ${rightHtml}
+            </div>
           </div>
         </div>
       </div>
@@ -1128,8 +1235,13 @@ function renderGantt(cards, homogeneousColor=null){
 
   const scrollEl = document.querySelector(".scroll");
   if(scrollEl) scrollEl.scrollTop = prevScrollTop;
-  const rightEl = document.getElementById("gRight");
-  if(rightEl) rightEl.scrollLeft = prevScrollLeft;
+
+  const rightEl = document.getElementById("gRightScroll");
+  if(rightEl){
+    rightEl.scrollLeft = prevScrollLeft;
+    // In 6M, no lateral scroll => force to 0
+    if(viewType === "multiMonth6") rightEl.scrollLeft = 0;
+  }
 
   bindGanttInteractions();
 }
@@ -1146,7 +1258,6 @@ function bindGanttInteractions(){
     const kind = el.getAttribute("data-kind");
     const cardId = el.getAttribute("data-card");
 
-    // Ctrl/Cmd click => open Trello
     const isOpenShortcut = e.ctrlKey || e.metaKey;
     const url = el.getAttribute("data-url");
     if(isOpenShortcut && url){
@@ -1182,7 +1293,6 @@ function bindGanttInteractions(){
     }
   };
 
-  // Tooltip hover
   root.onmouseover = async (e)=>{
     const el = e.target.closest("[data-kind]");
     if(!el) return;
@@ -1343,13 +1453,11 @@ document.addEventListener("DOMContentLoaded",()=>{
       return;
     }
 
-    // expand all
     ids.forEach(id=>expandedCards.add(id));
     persistExpanded();
     renderGantt(filteredCards, getHomogeneousColorIfAny());
     updateToggleBtn();
 
-    // fetch missing checklists
     const toLoad = ids.filter(id=>!getCachedChecklists(id));
     if(toLoad.length>=8) setLoading(true, "Chargement des checklists…");
     await Promise.allSettled(toLoad.map(async (cardId)=>{
@@ -1416,7 +1524,6 @@ document.addEventListener("DOMContentLoaded",()=>{
     window.__rT=setTimeout(()=>renderGantt(filteredCards, getHomogeneousColorIfAny()), 140);
   });
 
-  // restore persisted states
   restoreExpanded();
   setZoomActive("multiMonthQuarter");
 
@@ -1446,7 +1553,6 @@ document.addEventListener("DOMContentLoaded",()=>{
     setZoomActive(calendar.view.type);
   })();
 
-  // load then hydrate tags from URL (if any)
   load().then(()=>{
     const st=readUrlState();
     if(st.tags && st.tags.length){
