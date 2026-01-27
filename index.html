@@ -364,6 +364,15 @@ body{
 }
 
 .rowR{height:var(--row);position:relative;z-index:3}
+
+/* sticky top rows inside gantt scroll (Milestones / Sprint VN) */
+.stickyRow{
+  position:sticky;
+  z-index:8;
+  background:var(--surface);
+}
+.rowR.stickyRow{ background:#fff; }
+
 .subR{height:var(--subrow);position:relative;z-index:3}
 
 .bar{
@@ -786,8 +795,9 @@ function rebuildTagsModel(){
     for(const l of c.labels){
       const name=(l.name||"").trim();
       if(!name) continue;
-      // "Sprint VN" must not appear in tags dropdown
-      if(name.toLowerCase() === "sprint vn") continue;
+      // "Sprint VN" and "Milestones" must not appear in tags dropdown
+      const nlow = name.toLowerCase();
+      if(nlow === "sprint vn" || nlow === "milestones") continue;
       if(!map.has(name)){
         const hex = l.color ? (COLORS[l.color] || null) : null;
         map.set(name,{name,color:l.color||null,hex});
@@ -1260,11 +1270,16 @@ function renderGantt(cards, homogeneousColor=null){
   const prevScrollTop = document.getElementById("roadmapScroll")?.scrollTop || 0;
 
   if(!cards.length){
-    g.innerHTML = `
-      <div class="shell" style="padding:12px;border:1px solid var(--border);border-radius:var(--radius)">
-        <div style="font-weight:900;font-size:12px;color:var(--muted)">Aucune carte à afficher avec ces filtres.</div>
-      </div>`;
-    return;
+    const hasAnyMilestones = (allCards||[]).some(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()==="milestones"));
+    const hasAnySprintVn = (allCards||[]).some(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()==="sprint vn"));
+    // Keep Milestones (and Sprint VN if any) visible even when filters hide all regular tasks
+    if(!hasAnyMilestones && !hasAnySprintVn){
+      g.innerHTML = `
+        <div class="shell" style="padding:12px;border:1px solid var(--border);border-radius:var(--radius)">
+          <div style="font-weight:900;font-size:12px;color:var(--muted)">Aucune carte à afficher avec ces filtres.</div>
+        </div>`;
+      return;
+    }
   }
 
   const { rangeStart, rangeEnd, totalDays } = getViewRange();
@@ -1272,7 +1287,6 @@ function renderGantt(cards, homogeneousColor=null){
   setPercentVars(totalDays);
 
   const milestoneLabel = "milestones";
-  const productsLabel = "produits";
   const sprintVnLabel = "sprint vn";
   const sprintVnGateLabels = new Set([
     "plateformes build",
@@ -1291,8 +1305,8 @@ function renderGantt(cards, homogeneousColor=null){
     return false;
   }
 
-  const milestoneCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===milestoneLabel));
-  const productCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===productsLabel));
+  // Milestones are always visible (not filtered by tags)
+  const milestoneCards = (allCards||[]).filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===milestoneLabel));
 
   // Sprint VN cards are NOT filtered by the tags dropdown (since "Sprint VN" is hidden there).
   // They should appear when the gate filters are active, even if they don't match other selected tags.
@@ -1303,7 +1317,7 @@ function renderGantt(cards, homogeneousColor=null){
 
   const regularCards = cards.filter(c=>!c.labels.some(l=>{
     const name=(l.name||"").trim().toLowerCase();
-    return name===milestoneLabel || name===productsLabel || name===sprintVnLabel;
+    return name===milestoneLabel || name===sprintVnLabel;
   }));
 
   const byList=new Map();
@@ -1388,7 +1402,7 @@ function renderGantt(cards, homogeneousColor=null){
   let leftHtml = "";
   let rightHtml = "";
 
-  leftHtml += `<div class="rowL" data-rowkey="card:milestones" style="cursor:default;">
+  leftHtml += `<div class="rowL stickyRow" data-rowkey="card:milestones" style="cursor:default;top:0px;">
     <div class="chev"></div>
     <div class="title" style="font-size:11px;color:var(--muted);">Milestones (${milestoneCards.length})</div>
     <div class="due"></div>
@@ -1400,12 +1414,12 @@ function renderGantt(cards, homogeneousColor=null){
       const color = homogeneousColor || c.baseColor;
       bars += renderBarOrMilestone(c, color);
     }
-    rightHtml += `<div class="rowR" data-rowkey="card:milestones">${bars}</div>`;
+    rightHtml += `<div class="rowR stickyRow" data-rowkey="card:milestones" style="top:0px;">${bars}</div>`;
   }
 
   // Sprint VN (same display as Milestones) — only when one of the gate filters is active
   if(showSprintVnLine){
-    leftHtml += `<div class="rowL" data-rowkey="card:sprintvn" style="cursor:default;">
+    leftHtml += `<div class="rowL stickyRow" data-rowkey="card:sprintvn" style="cursor:default;top:var(--row);">
       <div class="chev"></div>
       <div class="title" style="font-size:11px;color:var(--muted);">Sprint VN (${sprintVNCards.length})</div>
       <div class="due"></div>
@@ -1417,25 +1431,11 @@ function renderGantt(cards, homogeneousColor=null){
         const color = homogeneousColor || c.baseColor;
         bars += renderBarOrMilestone(c, color);
       }
-      rightHtml += `<div class="rowR" data-rowkey="card:sprintvn">${bars}</div>`;
+      rightHtml += `<div class="rowR stickyRow" data-rowkey="card:sprintvn" style="top:var(--row);">${bars}</div>`;
     }
   }
 
 
-  leftHtml += `<div class="rowL" data-rowkey="card:produits" style="cursor:default;">
-    <div class="chev"></div>
-    <div class="title" style="font-size:11px;color:var(--muted);">Produits (${productCards.length})</div>
-    <div class="due"></div>
-  </div>`;
-  {
-    let bars="";
-    const sorted=[...productCards].sort((a,b)=>new Date(a.start)-new Date(b.start));
-    for(const c of sorted){
-      const color = homogeneousColor || c.baseColor;
-      bars += renderBarOrMilestone(c, color);
-    }
-    rightHtml += `<div class="rowR" data-rowkey="card:produits">${bars}</div>`;
-  }
 
   for(const listName of listOrder){
     for(const c of byList.get(listName)){
