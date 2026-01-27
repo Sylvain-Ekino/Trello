@@ -6,838 +6,1235 @@
 <title>Roadmap Volkswagen</title>
 
 <!-- Favicon (SVG inline) -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230f172a'/%3E%3Cstop offset='1' stop-color='%231f2937'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='6' y='10' width='52' height='48' rx='12' fill='url(%23g)'/%3E%3Crect x='6' y='18' width='52' height='6' rx='3' fill='%23ffffff' opacity='.18'/%3E%3Crect x='16' y='6' width='6' height='12' rx='3' fill='%23ffffff' opacity='.9'/%3E%3Crect x='42' y='6' width='6' height='12' rx='3' fill='%23ffffff' opacity='.9'/%3E%3Cpath d='M18 32h28M18 40h20' stroke='%23ffffff' stroke-width='4' stroke-linecap='round' opacity='.9'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%231f2937'/%3E%3Cpath d='M26 28l16 44h6l12-30 12 30h6l16-44h-7L74 62 62 32h-4L46 62 33 28h-7z' fill='%23fff'/%3E%3C/svg%3E"/>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.css">
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
+<link rel="preconnect" href="https://cdn.jsdelivr.net"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/index.global.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/multimonth@6.1.15/index.global.min.css">
 
 <style>
-/* =========================
-   DESIGN POLISH (no behavior change)
-   ========================= */
 :root{
-  --bg:#f6f7fb;
-  --surface:#ffffff;
-  --border:#e5e7eb;
-  --muted:#64748b;
-  --text:#0f172a;
-
-  --left:320px;
-  --row:28px;
-  --subrow:24px;
-  --barH:14px;
-
-  --dayp: 1%;
-  --weekp: 7%;
-
-  --radius:12px;
-  --radiusChip:999px;
-
-  --shadowSm: 0 6px 18px rgba(2,6,23,.08);
-  --shadowMd: 0 18px 45px rgba(2,6,23,.14);
-
-  --gridDay: rgba(2,6,23,.06);
-  --gridWeek: rgba(2,6,23,.12);
-  --weekend: rgba(2,6,23,.055);
-
-  --focus: rgba(15,23,42,.20);
-  --selectBg: rgba(15,23,42,.055);
-  --selectBgRight: rgba(15,23,42,.035);
-  --selectAccent: rgba(15,23,42,.55);
+  --bg:#0b1220;
+  --panel:#0f1a2e;
+  --panel2:#0c1628;
+  --muted:#9aa7bd;
+  --text:#e7eefc;
+  --border:rgba(255,255,255,.08);
+  --shadow: 0 12px 30px rgba(0,0,0,.35);
+  --radius:18px;
+  --radius2:14px;
+  --accent:#60a5fa;
+  --danger:#fb7185;
+  --warn:#fbbf24;
 }
-
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
   margin:0;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
-  background:var(--bg);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  background: radial-gradient(1200px 700px at 20% -10%, rgba(96,165,250,.18), transparent 60%),
+              radial-gradient(900px 600px at 90% 10%, rgba(251,113,133,.12), transparent 55%),
+              radial-gradient(900px 700px at 40% 110%, rgba(34,197,94,.10), transparent 55%),
+              var(--bg);
   color:var(--text);
-
-  height:100vh;
-  display:flex;
-  flex-direction:column;
   overflow:hidden;
-
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-.container{width:100%;max-width:none;margin:0;padding:0 10px;}
+a{color:inherit}
+button{font:inherit}
+
+.app{
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  padding:14px;
+  gap:12px;
+}
 
 .topbar{
-  position:sticky;top:0;z-index:10;
-  background:var(--surface);
-  border-bottom:1px solid var(--border);
-  flex:0 0 auto;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
 }
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.logo{
+  width:38px;height:38px;border-radius:14px;
+  background: linear-gradient(135deg, rgba(96,165,250,.9), rgba(251,113,133,.85));
+  box-shadow: var(--shadow);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;
+}
+.brand h1{
+  margin:0;
+  font-size:18px;
+  letter-spacing:.2px;
+}
+.brand .sub{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:2px;
+}
+
 .controls{
   display:flex;
-  gap:8px;
+  gap:10px;
+  align-items:center;
   flex-wrap:wrap;
-  padding:6px 0; /* slightly tighter */
-  align-items:center
+  justify-content:flex-end;
 }
 
-.chip,.btn,.token{
+.chip{
   border:1px solid var(--border);
-  background:var(--surface);
-  border-radius:var(--radiusChip);
-  padding:6px 10px;
-  font-weight:900;
-  font-size:12px;
-  line-height:1;
-  height:34px;
-  display:inline-flex;align-items:center;gap:8px;
-  box-shadow: 0 1px 0 rgba(2,6,23,.02);
+  background: rgba(255,255,255,.03);
+  border-radius: 999px;
+  padding:8px 12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
 }
-.btn{cursor:pointer}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.chip strong{font-size:11px;color:var(--muted);font-weight:900}
-
-.btn:focus-visible,
-.viewtab:focus-visible,
-.ddbtn:focus-visible,
-.mini:focus-visible,
-#saveToken:focus-visible,
-#logout:focus-visible{
-  outline:none;
-  box-shadow: 0 0 0 3px var(--focus);
+.chip .dot{
+  width:8px;height:8px;border-radius:50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(96,165,250,.18);
 }
+.chip small{color:var(--muted)}
+.chip b{font-weight:800}
 
-.viewtabs{display:flex;gap:6px;align-items:center}
-.viewtab{
+.btn{
   border:1px solid var(--border);
-  background:var(--surface);
-  border-radius:var(--radiusChip);
-  padding:6px 10px;
-  height:34px;
-  font-weight:900;
-  font-size:12px;
-  cursor:pointer;
-  opacity:.6;
-  display:inline-flex;align-items:center;
-  transition: opacity .12s ease, transform .08s ease;
-}
-.viewtab:active{transform: translateY(1px)}
-.viewtab.active{opacity:1}
-
-.spacer{flex:1 1 auto}
-
-.token{gap:6px}
-.token input{
-  border:0;outline:0;background:transparent;
-  font-weight:900;font-size:12px;min-width:160px;
+  background: rgba(255,255,255,.04);
   color:var(--text);
+  border-radius: 14px;
+  padding:9px 12px;
+  cursor:pointer;
+  box-shadow: 0 10px 22px rgba(0,0,0,.22);
+  transition: transform .08s ease, background .15s ease, border-color .15s ease;
 }
-.token input::placeholder{color:rgba(100,116,139,.85)}
-.token button{height:34px}
+.btn:hover{background: rgba(255,255,255,.06)}
+.btn:active{transform: translateY(1px)}
+.btn.primary{
+  border-color: rgba(96,165,250,.35);
+  background: rgba(96,165,250,.16);
+}
+.btn.danger{
+  border-color: rgba(251,113,133,.35);
+  background: rgba(251,113,133,.12);
+}
+.btn.ghost{
+  background: transparent;
+  box-shadow:none;
+}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+
+.segment{
+  display:flex;
+  border:1px solid var(--border);
+  border-radius: 14px;
+  overflow:hidden;
+  background: rgba(255,255,255,.03);
+}
+.segment button{
+  border:0;
+  background: transparent;
+  color: var(--muted);
+  padding:9px 12px;
+  cursor:pointer;
+}
+.segment button.active{
+  color: var(--text);
+  background: rgba(255,255,255,.06);
+}
 
 .main{
-  flex:1 1 auto;
+  flex:1;
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:12px;
   min-height:0;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
 }
 
 .panel{
-  margin-top:6px;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:var(--surface);
-  overflow:hidden;
-  position:relative;
-
-  flex:1 1 auto;
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
   min-height:0;
-  display:flex;
-  flex-direction:column;
+  overflow:hidden;
 }
 
-/* FullCalendar: compact + custom zoom buttons */
-#calendar{
-  padding:2px 6px;
+.panelHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 14px;
   border-bottom:1px solid var(--border);
-  flex:0 0 auto
+  background: rgba(0,0,0,.12);
 }
-.fc .fc-view-harness{display:none}
-.fc .fc-toolbar.fc-header-toolbar{margin:1px 0} /* tighter */
+.panelHeader h2{
+  margin:0;
+  font-size:13px;
+  letter-spacing:.25px;
+  text-transform:uppercase;
+  color: rgba(231,238,252,.92);
+}
+.panelHeader .right{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+
+#calendar{
+  height:100%;
+  min-height:0;
+  padding:10px;
+}
+
+.fc{
+  --fc-border-color: rgba(255,255,255,.09);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: rgba(255,255,255,.04);
+  --fc-neutral-text-color: var(--muted);
+  --fc-today-bg-color: rgba(96,165,250,.09);
+  --fc-button-bg-color: rgba(255,255,255,.05);
+  --fc-button-border-color: rgba(255,255,255,.12);
+  --fc-button-text-color: var(--text);
+  --fc-button-hover-bg-color: rgba(255,255,255,.08);
+  --fc-button-hover-border-color: rgba(255,255,255,.18);
+  --fc-button-active-bg-color: rgba(96,165,250,.18);
+  --fc-button-active-border-color: rgba(96,165,250,.28);
+  --fc-event-bg-color: rgba(96,165,250,.25);
+  --fc-event-border-color: rgba(96,165,250,.35);
+  --fc-event-text-color: var(--text);
+  font-size: 12px;
+}
 .fc .fc-toolbar-title{
-  font-size:12px;
+  font-size:14px;
   font-weight:900;
   letter-spacing:.2px;
 }
 .fc .fc-button{
-  padding:4px 8px!important;
-  font-size:12px!important;
-  line-height:1!important;
-  height:28px!important;
+  border-radius: 12px;
+  padding: .35em .6em;
 }
-.fc .fc-toolbar-chunk{display:flex;align-items:center;gap:6px}
-.fc .fc-button-group > .fc-button{margin:0!important}
+.fc .fc-button:focus{
+  box-shadow:none;
+}
+.fc .fc-daygrid-day-number,
+.fc .fc-col-header-cell-cushion{color: rgba(231,238,252,.88)}
+.fc .fc-multimonth-title{color: rgba(231,238,252,.92); font-weight:900;}
+.fc .fc-scrollgrid{border-radius: 14px; overflow:hidden}
 
-/* active state for 1M/3M/6M */
-.fc .fc-button.is-active{
-  background:#0f172a!important;
-  border-color:#0f172a!important;
-  color:#fff!important;
-  opacity:1!important;
+.tooltip{
+  position: fixed;
+  z-index: 9999;
+  pointer-events:none;
+  max-width: 340px;
+  background: rgba(12, 22, 40, .96);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+  box-shadow: 0 18px 44px rgba(0,0,0,.55);
+  padding: 10px 10px;
+  font-size: 12px;
+  line-height: 1.25;
+  transform: translate(-50%, -110%);
+  opacity: 0;
+  transition: opacity .08s ease;
 }
-.fc .fc-button:not(.is-active){opacity:.75}
+.tooltip.show{opacity:1}
+.tooltip .title{
+  font-weight: 900;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.tooltip .meta{
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.tooltip .checklist{
+  margin-top:8px;
+  border-top:1px dashed rgba(255,255,255,.14);
+  padding-top:8px;
+}
+.tooltip .clTitle{font-weight:800;margin-bottom:6px}
+.tooltip .item{
+  display:flex;gap:6px;align-items:flex-start;
+  margin:4px 0;
+}
+.tooltip .box{
+  width:14px;height:14px;border-radius:5px;
+  border:1px solid rgba(255,255,255,.18);
+  margin-top:2px;
+}
+.tooltip .box.done{
+  background: rgba(34,197,94,.25);
+  border-color: rgba(34,197,94,.35);
+}
+.tooltip .item span{
+  color: rgba(231,238,252,.92);
+}
+.tooltip .item.done span{
+  color: rgba(154,167,189,.95);
+  text-decoration: line-through;
+}
 
-/* Gantt wrapper fills remaining height */
-#gantt{
-  padding:6px;
-  flex:1 1 auto;
-  min-height:0;
-  overflow:hidden;
+.toast{
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 26, 46, .96);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.55);
+  padding: 12px 14px;
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  max-width: 740px;
+  width: calc(100% - 28px);
+  opacity:0;
+  pointer-events:none;
+  transition: opacity .12s ease, transform .12s ease;
 }
-#kanban{
-  flex:1 1 auto;
-  min-height:0;
-  overflow:auto;
-  padding:8px;
+.toast.show{
+  opacity:1;
+  pointer-events:auto;
+  transform: translateX(-50%) translateY(-2px);
+}
+.toast .left{
+  width:10px;
+  border-radius: 999px;
+  background: rgba(251,191,36,.85);
+  box-shadow: 0 0 0 3px rgba(251,191,36,.16);
+  margin-top:2px;
+}
+.toast .content{
+  flex:1;
+}
+.toast .content b{
+  display:block;
+  font-weight:900;
+  margin-bottom:2px;
+}
+.toast .content small{color:var(--muted)}
+.toast .actions{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+.modalOverlay{
+  position: fixed; inset:0;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(6px);
+  z-index: 10000;
   display:none;
+  align-items:center;
+  justify-content:center;
+  padding:14px;
+}
+.modalOverlay.show{display:flex}
+.modal{
+  width:min(720px, 96vw);
+  background: rgba(12,22,40,.98);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 22px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.70);
+  overflow:hidden;
+}
+.modalHeader{
+  padding:14px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,.09);
+}
+.modalHeader h3{
+  margin:0;
+  font-size:14px;
+  font-weight:900;
+}
+.modalBody{padding:14px}
+.field{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  margin-bottom:12px;
+}
+.field label{color:var(--muted);font-size:12px}
+.field input, .field textarea{
+  width:100%;
+  border-radius: 14px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color:var(--text);
+  padding:10px 12px;
+  outline:none;
+}
+.field textarea{min-height:90px;resize:vertical}
+.modalFooter{
+  padding:14px;
+  border-top:1px solid rgba(255,255,255,.09);
+  display:flex;gap:10px;justify-content:flex-end;
 }
 
-.shell{
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  overflow:hidden;
+.tagsDropdown{
+  position:absolute;
+  top:58px;
+  left:14px;
+  width: 280px;
+  max-height: 380px;
+  overflow:auto;
+  background: rgba(12,22,40,.98);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 18px;
+  box-shadow: 0 26px 70px rgba(0,0,0,.65);
+  padding:10px;
+  display:none;
+  z-index: 2000;
+}
+.tagsDropdown.open{display:block}
+.tagsDropdown .row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:8px 10px;
+  border-radius: 14px;
+  cursor:pointer;
+  border: 1px solid transparent;
+}
+.tagsDropdown .row:hover{
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.06);
+}
+.tagsDropdown .row .l{
+  display:flex;align-items:center;gap:10px;
+}
+.tagsDropdown .swatch{
+  width:12px;height:12px;border-radius:4px;
+  border:1px solid rgba(255,255,255,.16);
+}
+.tagsDropdown input[type="checkbox"]{
+  width:16px;height:16px;
+  accent-color: var(--accent);
+}
+.tagsDropdown .top{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:0 4px 8px 4px;
+  border-bottom:1px dashed rgba(255,255,255,.12);
+  margin-bottom:8px;
+}
+.tagsDropdown .top .mini{
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+  border-radius: 999px;
+  padding:6px 10px;
+  cursor:pointer;
+  color: rgba(231,238,252,.88);
+  font-size: 12px;
+}
+.tagsDropdown .top .mini:hover{background: rgba(255,255,255,.05)}
+.tagsDropdown .hint{
+  color: var(--muted);
+  font-size: 11px;
+  padding: 6px 6px 0 6px;
+}
 
+.kpi{
+  display:flex; gap:10px; align-items:center;
+}
+.kpi .card{
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  border-radius: 16px;
+  padding:8px 10px;
+  min-width: 140px;
+}
+.kpi .card b{display:block;font-weight:900;font-size:12px}
+.kpi .card small{color:var(--muted)}
+.kpi .card .value{font-weight:900; font-size:16px; margin-top:2px}
+
+.footer{
+  color: rgba(154,167,189,.95);
+  font-size: 11px;
+  display:flex; gap:10px; align-items:center; justify-content:space-between;
+  padding: 0 6px;
+}
+.footer a{color: rgba(96,165,250,.95); text-decoration:none}
+.footer a:hover{text-decoration:underline}
+
+/* ===== Roadmap (Gantt-like) ===== */
+#gantt{
+  padding:10px;
+  height:100%;
+  min-height:0;
+}
+#gantt .shell{
   height:100%;
   min-height:0;
   display:flex;
   flex-direction:column;
-  background:var(--surface);
+  overflow:hidden;
 }
-.head{
-  display:grid;
-  grid-template-columns:var(--left) 1fr;
-  border-bottom:1px solid var(--border);
-  flex:0 0 auto;
-}
-.hl{
-  border-right:1px solid var(--border);
-  padding:6px 8px;
-  font-size:10px;
-  font-weight:900;
-  color:var(--muted);
-  display:flex;align-items:center
-}
-.hr{padding:6px 8px;overflow:hidden}
-
-/* header rows */
-.rowline{display:flex;margin-top:2px}
-
-.tickW,
-.monthTick{
-  font-size:10px;
-  font-weight:900;
-  text-align:center;
+#gantt .head{
   display:flex;
-  align-items:center;
-  justify-content:center;
-  height:14px; /* makes centering consistent */
-  line-height:14px;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+  flex-wrap:wrap;
+  align-items:flex-end;
 }
-
-.tickW{
-  color:rgba(100,116,139,.92);
-  letter-spacing:.2px;
+#gantt .legend{
+  display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  color: var(--muted);
+  font-size:12px;
 }
-.monthTick{
-  color:rgba(15,23,42,.88);
-  text-transform:capitalize;
+#gantt .legend .pill{
+  display:flex; gap:8px; align-items:center;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+  padding:7px 10px;
+  border-radius: 999px;
 }
-
-/* 1M header (dates + days) */
-.dayline,.dateline{display:flex;margin-top:2px}
-.daytick,.datetick{
-  width:var(--dayp);
-  font-size:10px;
-  font-weight:900;
-  color:rgba(100,116,139,.90);
-  text-align:center;
-  height:14px;
-  line-height:14px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.daytick.we{opacity:.55}
-.datetick{color:rgba(15,23,42,.86)}
-
-/* the ONLY vertical scroll */
-.scroll{
-  display:grid;
-  grid-template-columns:var(--left) 1fr;
+#gantt .legend .pill .sw{width:10px;height:10px;border-radius:4px;border:1px solid rgba(255,255,255,.16)}
+#gantt .legend .pill b{color:rgba(231,238,252,.90);font-weight:900}
+#gantt .legend .pill small{color:var(--muted)}
+#gantt .table{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius: 18px;
+  overflow:hidden;
+  background: rgba(0,0,0,.08);
+  flex:1;
   min-height:0;
-  overflow-y:auto;
-  overflow-x:hidden;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior:smooth;
+  display:flex;
+  flex-direction:column;
 }
-
-.left{
-  border-right:1px solid var(--border);
-  overflow:visible;
+#gantt .tableHeader{
+  display:grid;
+  grid-template-columns: 240px 1fr;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background: rgba(0,0,0,.12);
 }
-.right{
-  position:relative;
-  overflow:visible;
-  background:#fff;
-}
-
-/* overlays */
-.weekendLayer{
-  position:absolute; inset:0;
-  pointer-events:none;
-  z-index:1;
-}
-.weekendBlock{
-  position:absolute; top:0; bottom:0;
-  background:var(--weekend);
-}
-.gridLayer{
-  position:absolute; inset:0;
-  pointer-events:none;
-  z-index:2;
-}
-.gridLine{
-  position:absolute; top:0; bottom:0;
-  width:1px;
-  background:var(--gridDay);
-}
-.gridLine.week{
-  background:var(--gridWeek);
-}
-
-/* today line */
-.todayline{
-  position:absolute;top:0;bottom:0;width:2px;
-  background:#ef4444;opacity:.60;pointer-events:none;
-  z-index:6;
-}
-
-.rowL, .rowR{border-bottom:1px solid rgba(229,231,235,.9);}
-.rowL{
-  display:flex;align-items:center;gap:8px;padding:0 8px;height:var(--row);
-  cursor:pointer;user-select:none;
-  transition: background .10s ease;
-}
-.rowL:hover{background:#f8fafc}
-.rowL .chev{width:14px;opacity:.55;font-weight:900}
-.rowL .title{
-  min-width:0;flex:1 1 auto;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  font-size:12px;font-weight:900;
-}
-.rowL .due{flex:0 0 auto;font-size:11px;font-weight:900;color:rgba(100,116,139,.95);}
-
-.subL{
-  display:flex;align-items:center;gap:8px;padding:0 8px 0 28px;height:var(--subrow);
-  cursor:pointer;user-select:none;
-  transition: background .10s ease;
-}
-.subL:hover{background:#f8fafc}
-.subL .dot{
-  width:8px;height:8px;border-radius:2px;transform:rotate(45deg);
-  border:1px solid rgba(15,23,42,.10);
-}
-.subL .stitle{
-  min-width:0;flex:1 1 auto;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  font-size:12px;font-weight:300;color:rgba(15,23,42,.88);
-}
-.subL .sdue{flex:0 0 auto;font-size:11px;font-weight:900;color:rgba(100,116,139,.95);}
-
-.checkL{
-  display:flex;align-items:center;gap:8px;padding:0 8px 0 28px;height:var(--subrow);
-  cursor:default;user-select:none;background:#f8fafc;
-}
-.checkL .ctitle{
-  min-width:0;flex:1 1 auto;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  font-size:12px;font-weight:800;color:rgba(100,116,139,.95);
-}
-
-.rowR{height:var(--row);position:relative;z-index:3}
-.subR{height:var(--subrow);position:relative;z-index:3}
-
-.bar{
-  position:absolute;height:var(--barH);
-  border-radius:10px;
-  padding:0 6px;
-  font-size:11px;
+#gantt .tableHeader .left{
+  padding:10px 12px;
+  color: rgba(231,238,252,.90);
   font-weight:900;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  cursor:pointer;
-  top:50%;
-  transform:translateY(-50%);
-  box-shadow: var(--shadowSm);
-  border:1px solid rgba(15,23,42,.10);
-  display:flex;align-items:center;justify-content:center;text-align:center;
-  z-index:5;
+  font-size:12px;
 }
-.bar:active{transform: translateY(calc(-50% + 1px));}
-.bar.overdue,.milestone.overdue{
-  border-color:#ef4444;
-  box-shadow: 0 0 0 2px rgba(239,68,68,.28), var(--shadowSm);
+#gantt .tableHeader .right{
+  position:relative;
+  overflow:hidden;
 }
-.milestone{
-  position:absolute;width:11px;height:11px;
-  transform:translate(-50%,-50%) rotate(45deg);
-  border-radius:3px;
-  cursor:pointer;
-  top:50%;
-  box-shadow: var(--shadowSm);
-  border:1px solid rgba(15,23,42,.10);
-  z-index:5;
+#gantt .months{
+  display:flex;
+  width:100%;
+  height:100%;
 }
-
-/* Selection highlight (more product-like) */
-.is-selected{ background:var(--selectBg) !important; }
-.rowR.is-selected, .subR.is-selected{ background:var(--selectBgRight) !important; }
-.rowL.is-selected, .subL.is-selected, .checkL.is-selected{
-  box-shadow: inset 3px 0 0 var(--selectAccent);
-}
-
-/* dropdown tags */
-.ddbtn{
-  border:0;background:transparent;
-  font-weight:900;font-size:12px;cursor:pointer;
-  display:inline-flex;align-items:center;gap:6px;max-width:220px;
-  padding:0;
-}
-.ddbtn .lbl{max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ddbtn .caret{opacity:.6;font-size:11px}
-.dd{
-  position:absolute;top: calc(100% + 6px);
-  min-width:260px;max-width:min(360px, calc(100vw - 22px));
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  box-shadow: var(--shadowMd);
-  padding:6px;display:none;z-index:999;
-}
-.dd.open{display:block}
-.dd .row{display:flex;align-items:center;gap:10px;padding:8px 8px;border-radius:10px;}
-.dd .row:hover{background:#f8fafc}
-.dd input[type="checkbox"]{width:16px;height:16px}
-.dd .name{font-weight:900;font-size:12px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dd .dotc{width:10px;height:10px;border-radius:999px;flex:0 0 auto;border:1px solid rgba(15,23,42,.10)}
-.dd .actions{display:flex;gap:6px;padding:6px 6px 4px;border-top:1px solid var(--border);margin-top:6px;}
-.dd .mini{
-  border:1px solid var(--border);
-  background:var(--surface);
-  border-radius:10px;
-  padding:6px 8px;
-  font-weight:900;font-size:12px;
-  cursor:pointer
-}
-.dd .mini:active{transform: translateY(1px)}
-
-@media (max-width: 760px){ :root{ --left: 240px; } }
-@media (max-width: 520px){
-  :root{ --left: 190px; }
-  .rowL .due, .subL .sdue{display:none;}
-}
-
-/* kanban */
-.kanbanGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;}
-.kcol{
-  background:#f8fafc;border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:8px;min-height:120px;
-}
-.kcol h3{margin:0 0 6px;font-size:12px;font-weight:900;color:rgba(100,116,139,.95);}
-.kcard{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-left:4px solid #94a3b8;
-  border-radius:12px;
-  padding:8px;
+#gantt .month{
+  border-left:1px solid rgba(255,255,255,.08);
+  display:flex;
+  align-items:center;
+  padding-left:10px;
   font-size:12px;
   font-weight:900;
-  margin-bottom:6px;
-  box-shadow: var(--shadowSm);
+  color: rgba(231,238,252,.86);
 }
-.kmeta{margin-top:4px;font-size:11px;color:rgba(100,116,139,.95);font-weight:900}
-
-/* banner + loading */
-.banner{
-  position:absolute;left:10px;right:10px;top:10px;z-index:20;
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);
+#gantt .body{
+  display:grid;
+  grid-template-columns: 240px 1fr;
+  min-height:0;
+  flex:1;
+}
+#gantt .lists{
+  border-right:1px solid rgba(255,255,255,.08);
+  overflow:auto;
+}
+#gantt .rows{
+  position:relative;
+  overflow:auto;
+}
+#gantt .listRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
   padding:10px 12px;
-  box-shadow: var(--shadowMd);
-  display:none;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  background: rgba(255,255,255,.01);
 }
-.banner .row{display:flex;align-items:center;gap:10px}
-.banner .msg{font-weight:900;font-size:12px;color:var(--text);min-width:0;flex:1 1 auto}
-.banner .hint{font-size:11px;font-weight:900;color:rgba(100,116,139,.95);margin-top:2px}
-.banner .actions{display:flex;gap:6px}
-.banner .mini{
-  border:1px solid var(--border);
-  background:var(--surface);
-  border-radius:10px;
-  padding:6px 8px;
-  font-weight:900;font-size:12px;
-  cursor:pointer;white-space:nowrap
+#gantt .listRow:nth-child(odd){background: rgba(255,255,255,.02)}
+#gantt .listRow .name{
+  font-weight:900;
+  font-size:12px;
+  color: rgba(231,238,252,.92);
 }
-
-.loading{
-  position:absolute;inset:0;z-index:15;display:none;
-  background:rgba(246,247,251,.55);
-  backdrop-filter: blur(3px);
-  align-items:center;justify-content:center;
+#gantt .listRow .count{
+  font-size:11px;
+  color: var(--muted);
 }
-.loading .box{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:10px 12px;
-  font-weight:900;font-size:12px;
-  box-shadow: var(--shadowMd);
+#gantt .row{
+  position:relative;
+  height: 46px;
+  border-bottom:1px solid rgba(255,255,255,.06);
 }
-
-/* KPI bar bottom */
-.kpiWrap{
-  padding:8px 0 12px; /* slightly tighter */
-  display:flex;justify-content:center;
-  flex:0 0 auto;
+#gantt .row:nth-child(odd){background: rgba(255,255,255,.02)}
+#gantt .gridLines{
+  position:absolute; inset:0;
+  pointer-events:none;
 }
-.kpi{
-  font-size:12px;font-weight:900;color:rgba(100,116,139,.95);
-  display:inline-flex;gap:14px;align-items:center;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:var(--radiusChip);
-  padding:8px 12px;
-  box-shadow: 0 1px 0 rgba(2,6,23,.02);
+#gantt .gridLine{
+  position:absolute; top:0; bottom:0;
+  width:1px;
+  background: rgba(255,255,255,.06);
 }
-.kpi b{color:var(--text)}
-
-/* Fullscreen button */
-.fsBtn{
-  position:fixed;right:14px;bottom:14px;z-index:50;
-  height:40px;min-width:40px;
-  border:1px solid var(--border);
-  background:var(--surface);
-  border-radius:var(--radiusChip);
-  box-shadow: var(--shadowMd);
+#gantt .gridLine.week{
+  background: rgba(96,165,250,.18);
+}
+#gantt .bar{
+  position:absolute;
+  top: 12px;
+  height: 22px;
+  border-radius: 999px;
+  border:1px solid rgba(255,255,255,.16);
+  background: rgba(96,165,250,.22);
+  box-shadow: 0 12px 28px rgba(0,0,0,.32);
+  display:flex;
+  align-items:center;
+  padding:0 10px;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
   cursor:pointer;
-  font-weight:900;font-size:12px;
-  display:flex;align-items:center;justify-content:center;
+  transition: transform .08s ease, filter .15s ease;
 }
-.fsBtn:active{transform:translateY(1px)}
+#gantt .bar:hover{filter: brightness(1.05)}
+#gantt .bar:active{transform: translateY(1px)}
+#gantt .bar b{font-weight:900;font-size:12px}
+#gantt .bar small{color: rgba(231,238,252,.88); margin-left:8px; font-size:11px}
+#gantt .milestone{
+  position:absolute;
+  top: 7px;
+  width: 32px;
+  height: 32px;
+  border-radius: 12px;
+  border:1px solid rgba(255,255,255,.18);
+  background: rgba(96,165,250,.18);
+  box-shadow: 0 16px 34px rgba(0,0,0,.45);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+}
+#gantt .milestone:hover{filter: brightness(1.06)}
+#gantt .milestone:active{transform: translateY(1px)}
+#gantt .milestone span{font-size:12px}
+#gantt .milestoneLabel{
+  position:absolute;
+  top: 42px;
+  transform: translateX(-30%);
+  font-size: 11px;
+  color: rgba(231,238,252,.88);
+  white-space: nowrap;
+  pointer-events:none;
+}
+
+.kanban{
+  display:none;
+  height:100%;
+  min-height:0;
+  padding:10px;
+}
+.kanban.show{display:block}
+.kanban .cols{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:12px;
+  height:100%;
+  min-height:0;
+}
+.kanban .col{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius: 18px;
+  overflow:hidden;
+  background: rgba(0,0,0,.08);
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
+.kanban .colHeader{
+  padding:12px 12px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background: rgba(0,0,0,.12);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+.kanban .colHeader b{
+  font-weight:900;
+  font-size:12px;
+  letter-spacing:.25px;
+  text-transform:uppercase;
+}
+.kanban .colHeader small{color:var(--muted)}
+.kanban .cards{
+  padding:10px;
+  overflow:auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.kcard{
+  border:1px solid rgba(255,255,255,.10);
+  border-radius: 18px;
+  padding:10px 10px;
+  background: rgba(255,255,255,.03);
+  box-shadow: 0 12px 28px rgba(0,0,0,.28);
+}
+.kcard .t{
+  font-weight:900;
+  font-size:12px;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+}
+.kcard .meta{
+  margin-top:6px;
+  font-size:11px;
+  color:var(--muted);
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.kcard .reason{
+  margin-top:8px;
+  font-size:12px;
+  color: rgba(231,238,252,.92);
+  background: rgba(251,191,36,.08);
+  border: 1px dashed rgba(251,191,36,.25);
+  padding:8px 10px;
+  border-radius: 14px;
+}
+.kcard .tags{
+  margin-top:8px;
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.kcard .tag{
+  font-size:11px;
+  padding:5px 8px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.03);
+  color: rgba(231,238,252,.88);
+}
+.kcard .tag .sw{
+  display:inline-block;
+  width:8px;height:8px;border-radius:3px;
+  margin-right:6px;
+  border:1px solid rgba(255,255,255,.16);
+  vertical-align:middle;
+}
+
+@media (min-width: 980px){
+  .main{
+    grid-template-columns: 1.2fr .8fr;
+  }
+}
+@media (max-width: 980px){
+  body{overflow:auto}
+  .app{height:auto; overflow:visible}
+  .panel{min-height: 520px}
+}
 </style>
 </head>
-
 <body>
-<div class="topbar">
-  <div class="container">
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">VW</div>
+      <div>
+        <h1>Roadmap Volkswagen</h1>
+        <div class="sub">Calendrier + Roadmap Trello (Quarter view, tags & tooltips)</div>
+      </div>
+    </div>
+
     <div class="controls">
-      <div class="viewtabs">
-        <button class="viewtab active" id="tabGantt" type="button">Tâches en cours</button>
-        <button class="viewtab" id="tabKanban" type="button">Tâches bloquées</button>
+      <div class="chip" id="boardChip">
+        <div class="dot"></div>
+        <div>
+          <div style="display:flex;gap:8px;align-items:baseline">
+            <b id="boardName">—</b>
+            <small id="kpiSmall"></small>
+          </div>
+          <small id="kpiHint">Connecte-toi pour charger les cartes.</small>
+        </div>
       </div>
 
       <div class="chip" id="tagsChip">
-        <strong>Tags</strong>
-        <button class="ddbtn" id="tagsBtn" type="button" aria-haspopup="true" aria-expanded="false">
-          <span class="lbl" id="tagsBtnLabel">Tous</span>
-          <span class="caret">▾</span>
-        </button>
-        <div class="dd" id="tagsDropdown" role="menu" aria-label="Tags">
-          <div id="tagsList"></div>
-          <div class="actions">
-            <button class="mini" id="tagsAll" type="button">Tous</button>
-            <button class="mini" id="tagsNone" type="button">Aucun</button>
+        <div class="dot" id="tagDot"></div>
+        <div>
+          <small>Filtres</small>
+          <div style="display:flex;gap:8px;align-items:baseline">
+            <b id="tagsLabel">Tous</b>
+            <small id="tagsCount"></small>
           </div>
         </div>
+        <button class="btn ghost" id="tagsBtn" aria-haspopup="true" aria-expanded="false" title="Filtrer par étiquettes">▼</button>
       </div>
 
-      <button class="btn" id="toggleAll">Afficher les sous-tâches</button>
-
-      <div class="spacer"></div>
-
-      <button class="btn" id="logout" title="Oublier le token">Oublier le token</button>
-
-      <div class="token" title="Token Trello (stocké localement)">
-        <input id="tokenInput" type="password" placeholder="Token Trello"/>
-        <button class="btn" id="saveToken">OK</button>
+      <div class="segment" role="tablist" aria-label="Vue">
+        <button id="tabCalendar" class="active" role="tab" aria-selected="true">Calendrier</button>
+        <button id="tabRoadmap" role="tab" aria-selected="false">Roadmap</button>
+        <button id="tabKanban" role="tab" aria-selected="false">Bloquées</button>
       </div>
+
+      <button class="btn primary" id="connectBtn">Connexion</button>
+      <button class="btn" id="refreshBtn" disabled>Rafraîchir</button>
+      <button class="btn danger" id="logoutBtn" disabled>Déconnexion</button>
     </div>
   </div>
-</div>
 
-<div class="container main">
-  <div class="panel" id="panelRoot">
-    <div class="banner" id="banner">
-      <div class="row">
-        <div class="msg" id="bannerMsg">—</div>
-        <div class="actions">
-          <button class="mini" id="bannerRetry" type="button">Réessayer</button>
-          <button class="mini" id="bannerReconnect" type="button">Reconnex.</button>
-          <button class="mini" id="bannerClose" type="button">OK</button>
+  <div class="main">
+    <div class="panel" id="calendarPanel">
+      <div class="panelHeader">
+        <h2>Planning</h2>
+        <div class="right">
+          <div class="segment" id="zoomSeg" title="Zoom">
+            <button data-zoom="1" class="active">1M</button>
+            <button data-zoom="3">3M</button>
+            <button data-zoom="6">6M</button>
+          </div>
+          <button class="btn" id="todayBtn">Aujourd’hui</button>
         </div>
       </div>
-      <div class="hint" id="bannerHint"></div>
+      <div id="calendar"></div>
     </div>
 
-    <div class="loading" id="loading">
-      <div class="box" id="loadingText">Chargement…</div>
+    <div class="panel" id="roadmapPanel" style="display:none">
+      <div class="panelHeader">
+        <h2>Roadmap</h2>
+        <div class="right">
+          <button class="btn" id="roadmapTodayBtn">Aujourd’hui</button>
+        </div>
+      </div>
+      <div id="gantt"></div>
     </div>
 
-    <div id="calendar"></div>
-    <div id="gantt"></div>
-    <div id="kanban"></div>
+    <div class="panel" id="kanbanPanel" style="display:none">
+      <div class="panelHeader">
+        <h2>Cartes bloquées</h2>
+        <div class="right">
+          <small style="color:var(--muted)">Triées par date + priorité</small>
+        </div>
+      </div>
+      <div class="kanban" id="kanban"></div>
+    </div>
   </div>
 
-  <div class="kpiWrap">
-    <div class="kpi" id="kpiText">—</div>
+  <div class="footer">
+    <div>Exclut “🎉 Terminé” • Pas de cartes archivées • Tooltips = checklists</div>
+    <div><a href="https://trello.com" target="_blank" rel="noreferrer">Trello</a> • <a href="https://fullcalendar.io" target="_blank" rel="noreferrer">FullCalendar</a></div>
   </div>
 </div>
 
-<button class="fsBtn" id="fsBtn" title="Plein écran">⤢</button>
+<div class="tagsDropdown" id="tagsDropdown" role="menu" aria-label="Filtres d’étiquettes">
+  <div class="top">
+    <button class="mini" id="tagsAll">Tous</button>
+    <button class="mini" id="tagsNone">Aucun</button>
+  </div>
+  <div id="tagsList"></div>
+  <div class="hint">Sélectionne 1 tag pour une couleur homogène.</div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<div class="toast" id="toast">
+  <div class="left" id="toastDot"></div>
+  <div class="content">
+    <b id="toastTitle">—</b>
+    <small id="toastHint">—</small>
+  </div>
+  <div class="actions">
+    <button class="btn" id="toastRetryBtn">Réessayer</button>
+    <button class="btn primary" id="toastConnectBtn">Reconnex.</button>
+    <button class="btn" id="toastCloseBtn">Fermer</button>
+  </div>
+</div>
+
+<div class="modalOverlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modalHeader">
+      <h3>Connexion Trello</h3>
+      <button class="btn" id="modalClose">✕</button>
+    </div>
+    <div class="modalBody">
+      <div class="field">
+        <label>Board ID (ex: 5abbe4b7ddc1b351ef961414)</label>
+        <input id="boardIdInput" placeholder="Colle l’ID du board"/>
+      </div>
+      <div class="field">
+        <label>API Key (publique)</label>
+        <input id="keyInput" placeholder="Colle ta key Trello"/>
+      </div>
+      <div class="field">
+        <label>Token (personnel)</label>
+        <textarea id="tokenInput" placeholder="Colle ton token Trello"></textarea>
+      </div>
+      <small style="color:var(--muted)">
+        Astuce : tu peux générer un token via Trello (clé publique + autorisation). Le token est stocké localement dans ton navigateur.
+      </small>
+    </div>
+    <div class="modalFooter">
+      <button class="btn" id="modalCancel">Annuler</button>
+      <button class="btn primary" id="modalSave">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/multimonth@6.1.15/index.global.min.js"></script>
 
 <script>
-/* ================= CONFIG ================= */
-const TRELLO={key:"ec995ad68de9cdaafd64b131e5fa00ec",boardId:"6490c5416cea9255ba3b0383"};
-const DONE=new Set(["🎉 Terminé"]);
-const BLOCKED_LISTS=new Set(["🔒 Bloqué","✋ En attente"]);
-const COLORS={
-  green:"#22c55e",yellow:"#eab308",orange:"#f97316",red:"#ef4444",
-  purple:"#a855f7",blue:"#3b82f6",sky:"#0ea5e9",
-  lime:"#84cc16",pink:"#ec4899",black:"#111827"
-};
-const API="https://api.trello.com/1";
+/* =========================================
+   Trello Calendar Builder - single file app
+   ========================================= */
 
-/* localStorage keys */
-const TAGS_KEY="tc_selected_tags";
-const TAGS_NONE="__NONE__";
-const EXPAND_KEY="tc_expanded_cards";
-const URL_STATE_KEY="tc_url_state_v10";
+const LS_KEY = "trello_calendar_vw_v4";
+const DONE = "🎉 Terminé";
 
-/* checklist cache persistent */
-const CL_CACHE_KEY="tc_checklist_cache_v1";
-const CL_TTL_MS=20*60*1000;
-const CL_MAX_ITEMS=120;
+let trello = { key:"", token:"", boardId:"" };
+let allTags = [];          // {name,color,hex}
+let allCards = [];         // normalized cards
+let blockedCards = [];     // subset with custom field "Raison" or flags
+let filteredCards = [];
+let filteredBlockedCards = [];
+let doneListIds = new Set();
 
-/* ================= STATE ================= */
-let calendar;
-let updateToggleBtn=null;
+let calendar = null;
+let tagsMode = "all"; // all | some | none
+let selectedTags = new Set();
+let zoomMonths = 3;
 
-let allCards=[];
-let filteredCards=[];
-let blockedCards=[];
-let filteredBlockedCards=[];
+const tooltipEl = document.getElementById("tooltip");
 
-let listNames=new Map();
-let doneListIds=new Set();
-let blockedListIds=new Set();
+// Checklist cache: in-memory + localStorage TTL
+const CHECKLIST_TTL_MS = 20 * 60 * 1000;
+let checklistMem = new Map(); // cardId -> {t, data}
 
-let allTags=[];
-let selectedTags=new Set();
-let tagsMode="all";
-
-let expandedCards=new Set();
-const checklistCache=new Map();
-let checklistPersistent=new Map();
-
-/* selection */
-let selectedRowKey = null;
-
-/* ================= HELPERS ================= */
-const qs=o=>new URLSearchParams(o).toString();
-const token=()=>localStorage.getItem("trello_token");
-const setToken=(t)=>localStorage.setItem("trello_token", t);
-const clearToken=()=>localStorage.removeItem("trello_token");
-const day=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x};
-const diffDays=(a,b)=>Math.round((day(b)-day(a))/86400000);
-const esc=s=>String(s).replace(/[&<>"]/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[m]));
-function fmtDue(iso){
-  if(!iso) return "";
-  const d=new Date(iso);
-  if(Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat("fr",{day:"2-digit",month:"short"}).format(d);
+function loadState(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return;
+    const s = JSON.parse(raw);
+    trello = {
+      key: s.key || "",
+      token: s.token || "",
+      boardId: s.boardId || ""
+    };
+    zoomMonths = s.zoomMonths || 3;
+    tagsMode = s.tagsMode || "all";
+    selectedTags = new Set(s.selectedTags || []);
+  }catch(e){}
 }
-function isOverdue(iso){
-  if(!iso) return false;
-  const d=day(new Date(iso));
-  return d < day(new Date());
+function saveState(){
+  const s = {
+    key: trello.key,
+    token: trello.token,
+    boardId: trello.boardId,
+    zoomMonths,
+    tagsMode,
+    selectedTags: [...selectedTags]
+  };
+  localStorage.setItem(LS_KEY, JSON.stringify(s));
 }
 
-/* ISO week number (Mon-based) */
-function isoWeek(d){
-  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const dayNum = date.getUTCDay() || 7;
-  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
-  return Math.ceil((((date - yearStart) / 86400000) + 1)/7);
-}
-function monthLabelFR(dt){
-  return new Intl.DateTimeFormat("fr",{month:"long"}).format(dt);
+function fmtDate(d){
+  if(!d) return "—";
+  const dt = new Date(d);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth()+1).padStart(2,"0");
+  const da = String(dt.getDate()).padStart(2,"0");
+  return `${da}/${m}/${y}`;
 }
 
-/* ================= UI: banner/loading/kpi ================= */
-const bannerEl=()=>document.getElementById("banner");
-function showBanner(msg, hint="", {retry=true,reconnect=true}={}){
-  const b=bannerEl();
-  document.getElementById("bannerMsg").textContent=msg;
-  document.getElementById("bannerHint").textContent=hint||"";
-  document.getElementById("bannerRetry").style.display = retry ? "" : "none";
-  document.getElementById("bannerReconnect").style.display = reconnect ? "" : "none";
-  b.style.display="block";
+function day(d){
+  const x = new Date(d);
+  x.setHours(0,0,0,0);
+  return x;
 }
-function hideBanner(){ bannerEl().style.display="none"; }
-function setLoading(on, text="Chargement…"){
-  const el=document.getElementById("loading");
-  document.getElementById("loadingText").textContent=text;
-  el.style.display=on ? "flex" : "none";
-}
-function setKpi(){
-  const el=document.getElementById("kpiText");
-  const inProgress=filteredCards.length;
-  const overdue=filteredCards.filter(c=>isOverdue(c.due)).length;
-  const blocked=filteredBlockedCards.length;
-  el.innerHTML = `<span><b>${inProgress}</b> en cours</span><span><b>${overdue}</b> en retard</span><span><b>${blocked}</b> bloquées</span>`;
+function diffDays(a,b){
+  return Math.round((day(b)-day(a))/86400000);
 }
 
-/* ================= URL state ================= */
-function readUrlState(){
-  const p=new URLSearchParams(location.search);
-  const view=p.get("view");
-  const zoom=p.get("zoom");
-  const tagsRaw=p.get("tags")||"";
-  const tags = tagsRaw ? tagsRaw.split(",").map(s=>decodeURIComponent(s)) : null;
-  return {view, zoom, tags};
+function setLoading(on){
+  document.getElementById("refreshBtn").disabled = on || !isConnected();
+  document.getElementById("logoutBtn").disabled = on || !isConnected();
+  document.getElementById("connectBtn").disabled = on;
 }
-function writeUrlState(){
-  const p=new URLSearchParams();
-  const isKanban = document.getElementById("tabKanban").classList.contains("active");
-  p.set("view", isKanban ? "kanban" : "gantt");
+function isConnected(){
+  return !!(trello.key && trello.token && trello.boardId);
+}
 
-  const vt=calendar?.view?.type || "multiMonthQuarter";
-  const zoom = (vt==="multiMonth1") ? "1" : (vt==="multiMonth6") ? "6" : "3";
-  p.set("zoom", zoom);
+function showBanner(title, hint, {retry=true,reconnect=true}={}){
+  const toast=document.getElementById("toast");
+  const tTitle=document.getElementById("toastTitle");
+  const tHint=document.getElementById("toastHint");
+  const retryBtn=document.getElementById("toastRetryBtn");
+  const connBtn=document.getElementById("toastConnectBtn");
+
+  tTitle.textContent = title || "Info";
+  tHint.textContent = hint || "";
+  retryBtn.style.display = retry ? "" : "none";
+  connBtn.style.display = reconnect ? "" : "none";
+
+  toast.classList.add("show");
+}
+function hideBanner(){
+  document.getElementById("toast").classList.remove("show");
+}
+
+document.getElementById("toastCloseBtn").addEventListener("click", hideBanner);
+document.getElementById("toastRetryBtn").addEventListener("click", ()=>{
+  hideBanner();
+  if(isConnected()) initBoard();
+});
+document.getElementById("toastConnectBtn").addEventListener("click", ()=>{
+  hideBanner();
+  openModal();
+});
+
+function openModal(){
+  document.getElementById("modalOverlay").classList.add("show");
+  document.getElementById("boardIdInput").value = trello.boardId || "";
+  document.getElementById("keyInput").value = trello.key || "";
+  document.getElementById("tokenInput").value = trello.token || "";
+}
+function closeModal(){
+  document.getElementById("modalOverlay").classList.remove("show");
+}
+document.getElementById("connectBtn").addEventListener("click", openModal);
+document.getElementById("modalClose").addEventListener("click", closeModal);
+document.getElementById("modalCancel").addEventListener("click", closeModal);
+document.getElementById("modalSave").addEventListener("click", ()=>{
+  trello.boardId = document.getElementById("boardIdInput").value.trim();
+  trello.key = document.getElementById("keyInput").value.trim();
+  trello.token = document.getElementById("tokenInput").value.trim();
+
+  saveState();
+  closeModal();
+  if(isConnected()) initBoard();
+  else showBanner("Infos manquantes.", "Renseigne Board ID, Key et Token.", {retry:false,reconnect:true});
+});
+
+document.getElementById("logoutBtn").addEventListener("click", ()=>{
+  trello = {key:"",token:"",boardId:""};
+  saveState();
+  allTags=[]; allCards=[]; blockedCards=[]; filteredCards=[]; filteredBlockedCards=[];
+  selectedTags = new Set();
+  tagsMode = "all";
+  renderTagsChip();
+  renderTagsDropdown();
+  setKpi();
+  calendar.removeAllEvents();
+  document.getElementById("boardName").textContent="—";
+  showBanner("Déconnecté.", "Tu peux te reconnecter avec un autre token.", {retry:false,reconnect:true});
+});
+
+document.getElementById("refreshBtn").addEventListener("click", ()=>{
+  if(isConnected()) initBoard();
+});
+
+document.getElementById("todayBtn").addEventListener("click", ()=> calendar.today());
+document.getElementById("roadmapTodayBtn").addEventListener("click", ()=> calendar.today());
+
+/* ================= View switching ================= */
+const tabCalendar = document.getElementById("tabCalendar");
+const tabRoadmap  = document.getElementById("tabRoadmap");
+const tabKanban   = document.getElementById("tabKanban");
+
+function setActiveTab(tab){
+  tabCalendar.classList.toggle("active", tab==="calendar");
+  tabRoadmap.classList.toggle("active", tab==="roadmap");
+  tabKanban.classList.toggle("active", tab==="kanban");
+
+  document.getElementById("calendarPanel").style.display = tab==="calendar" ? "" : "none";
+  document.getElementById("roadmapPanel").style.display  = tab==="roadmap" ? "" : "none";
+  document.getElementById("kanbanPanel").style.display   = tab==="kanban" ? "" : "none";
+
+  if(tab==="roadmap"){
+    renderGantt(filteredCards, getHomogeneousColorIfAny());
+    setTimeout(forceRoadmapScrollHeight, 20);
+  }
+  if(tab==="kanban"){
+    renderKanban(filteredBlockedCards, getHomogeneousColorIfAny());
+  }
+
+  // persist in URL
+  const u=new URL(location.href);
+  u.searchParams.set("tab", tab);
+  history.replaceState(null,"",u.toString());
+}
+
+tabCalendar.addEventListener("click", ()=> setActiveTab("calendar"));
+tabRoadmap.addEventListener("click", ()=> setActiveTab("roadmap"));
+tabKanban.addEventListener("click", ()=> setActiveTab("kanban"));
+
+/* ================= Zoom ================= */
+document.getElementById("zoomSeg").addEventListener("click", (e)=>{
+  const b=e.target.closest("button[data-zoom]");
+  if(!b) return;
+  zoomMonths = parseInt(b.dataset.zoom,10);
+  for(const x of document.querySelectorAll("#zoomSeg button")){
+    x.classList.toggle("active", x===b);
+  }
+  saveState();
+  applyZoom();
+});
+
+function applyZoom(){
+  if(!calendar) return;
+  if(zoomMonths===1) calendar.changeView("dayGridMonth");
+  else if(zoomMonths===3) calendar.changeView("multiMonthQuarter");
+  else calendar.changeView("multiMonthYear");
+  // URL
+  const u=new URL(location.href);
+  u.searchParams.set("zoom", String(zoomMonths));
+  history.replaceState(null,"",u.toString());
+}
+
+/* ================= Tags dropdown ================= */
+const dd=document.getElementById("tagsDropdown");
+const tagsBtn=document.getElementById("tagsBtn");
+
+function openTags(){
+  dd.classList.add("open");
+  tagsBtn.setAttribute("aria-expanded","true");
+}
+function closeTags(){
+  dd.classList.remove("open");
+  tagsBtn.setAttribute("aria-expanded","false");
+}
+tagsBtn.addEventListener("click", (e)=>{
+  e.stopPropagation();
+  if(dd.classList.contains("open")) closeTags();
+  else openTags();
+});
+document.addEventListener("click", (e)=>{
+  if(!dd.contains(e.target) && e.target!==tagsBtn) closeTags();
+});
+
+document.getElementById("tagsAll").addEventListener("click", ()=>{
+  tagsMode="all";
+  selectedTags=new Set(allTags.map(t=>t.name));
+  persistSelectedTags();
+  renderTagsDropdown();
+  applyFilters();
+});
+document.getElementById("tagsNone").addEventListener("click", ()=>{
+  tagsMode="none";
+  selectedTags.clear();
+  persistSelectedTags();
+  renderTagsDropdown();
+  applyFilters();
+});
+
+function persistSelectedTags(){
+  saveState();
+  // URL
+  const u=new URL(location.href);
+  const tags=[...selectedTags];
+  if(tagsMode==="some" && tags.length) u.searchParams.set("tags", tags.join("|"));
+  else u.searchParams.delete("tags");
+  u.searchParams.set("tagsMode", tagsMode);
+  history.replaceState(null,"",u.toString());
+}
+
+function renderTagsChip(){
+  const label=document.getElementById("tagsLabel");
+  const count=document.getElementById("tagsCount");
+  const dot=document.getElementById("tagDot");
 
   if(tagsMode==="none"){
-    p.set("tags", encodeURIComponent(TAGS_NONE));
-  }else if(selectedTags.size){
-    p.set("tags", [...selectedTags].map(t=>encodeURIComponent(t)).join(","));
-  }
-
-  const next = `${location.pathname}?${p.toString()}`;
-  history.replaceState(null,"",next);
-  try{ localStorage.setItem(URL_STATE_KEY, next); }catch{}
-}
-
-/* ================= persistent checklist cache ================= */
-function loadPersistentChecklistCache(){
-  checklistPersistent=new Map();
-  try{
-    const raw=localStorage.getItem(CL_CACHE_KEY);
-    if(!raw) return;
-    const obj=JSON.parse(raw);
-    const now=Date.now();
-    for(const [cardId, entry] of Object.entries(obj||{})){
-      if(!entry || typeof entry.t!=="number") continue;
-      if(now - entry.t > CL_TTL_MS) continue;
-      checklistPersistent.set(cardId, entry);
-    }
-  }catch{}
-}
-function persistChecklistCache(){
-  try{
-    const arr=[...checklistPersistent.entries()]
-      .sort((a,b)=>(b[1]?.t||0)-(a[1]?.t||0))
-      .slice(0, CL_MAX_ITEMS);
-    const obj={};
-    for(const [id, entry] of arr) obj[id]=entry;
-    localStorage.setItem(CL_CACHE_KEY, JSON.stringify(obj));
-  }catch{}
-}
-function getCachedChecklists(cardId){
-  const mem=checklistCache.get(cardId);
-  if(mem?.loaded) return mem.checklists;
-
-  const p=checklistPersistent.get(cardId);
-  if(p?.v){
-    checklistCache.set(cardId,{loaded:true,checklists:p.v});
-    return p.v;
-  }
-  return null;
-}
-function setCachedChecklists(cardId, checklists){
-  checklistCache.set(cardId,{loaded:true,checklists});
-  checklistPersistent.set(cardId,{t:Date.now(), v:checklists});
-  persistChecklistCache();
-}
-
-/* ================= TAGS ================= */
-function rebuildTagsModel(){
-  const map=new Map();
-  const tagCards=[...allCards, ...blockedCards];
-  for(const c of tagCards){
-    for(const l of c.labels){
-      const name=(l.name||"").trim();
-      if(!name) continue;
-      if(!map.has(name)){
-        const hex = l.color ? (COLORS[l.color] || null) : null;
-        map.set(name,{name,color:l.color||null,hex});
-      }else{
-        const cur=map.get(name);
-        if(!cur.color && l.color){
-          cur.color=l.color;
-          cur.hex=COLORS[l.color] || cur.hex;
-        }
-      }
-    }
-  }
-  allTags=[...map.values()].sort((a,b)=>a.name.localeCompare(b.name,"fr",{sensitivity:"base"}));
-}
-function restoreSelectedTags(){
-  selectedTags=new Set();
-  try{
-    const raw=localStorage.getItem(TAGS_KEY);
-    const arr=raw?JSON.parse(raw):[];
-    if(arr.includes(TAGS_NONE)){ tagsMode="none"; return; }
-    for(const t of arr){
-      if(allTags.some(x=>x.name===t)) selectedTags.add(t);
-    }
-    tagsMode = selectedTags.size ? "some" : "all";
-  }catch{}
-}
-function persistSelectedTags(){
-  if(tagsMode === "none"){
-    localStorage.setItem(TAGS_KEY, JSON.stringify([TAGS_NONE]));
+    label.textContent="Aucun";
+    count.textContent="";
+    dot.style.background = "rgba(251,113,133,.95)";
+    dot.style.boxShadow = "0 0 0 3px rgba(251,113,133,.16)";
     return;
   }
-  localStorage.setItem(TAGS_KEY, JSON.stringify([...selectedTags]));
+  if(tagsMode==="some" && selectedTags.size===1){
+    const name=[...selectedTags][0];
+    label.textContent=name;
+    count.textContent="";
+    const tag=allTags.find(t=>t.name===name);
+    if(tag?.hex){
+      dot.style.background = tag.hex;
+      dot.style.boxShadow = "0 0 0 3px rgba(96,165,250,.14)";
+    }else{
+      dot.style.background = "rgba(96,165,250,.95)";
+      dot.style.boxShadow = "0 0 0 3px rgba(96,165,250,.16)";
+    }
+    return;
+  }
+  if(tagsMode==="some"){
+    label.textContent = `${selectedTags.size} tags`;
+    count.textContent = "";
+    dot.style.background = "rgba(96,165,250,.95)";
+    dot.style.boxShadow = "0 0 0 3px rgba(96,165,250,.16)";
+    return;
+  }
+  // all
+  label.textContent="Tous";
+  count.textContent="";
+  dot.style.background = "rgba(96,165,250,.95)";
+  dot.style.boxShadow = "0 0 0 3px rgba(96,165,250,.16)";
 }
-function setTagsBtnLabel(){
-  const el=document.getElementById("tagsBtnLabel");
-  if(tagsMode === "none"){ el.textContent="Aucun"; return; }
-  const n=selectedTags.size;
-  if(n===0) el.textContent="Tous";
-  else if(n===1) el.textContent=[...selectedTags][0];
-  else el.textContent=`${n} tags`;
-}
+
 function renderTagsDropdown(){
   const listEl=document.getElementById("tagsList");
   listEl.innerHTML="";
 
   for(const t of allTags){
+    // Hide internal label from filter dropdown (still exists on cards)
+    if((t.name||"").trim() === SPRINT_VN_LABEL) continue;
     const id="tag_" + btoa(unescape(encodeURIComponent(t.name))).replaceAll("=","");
     const checked=selectedTags.has(t.name);
 
     const row=document.createElement("label");
     row.className="row";
     row.setAttribute("for", id);
+
+    const left=document.createElement("div");
+    left.className="l";
+
+    const sw=document.createElement("div");
+    sw.className="swatch";
+    sw.style.background = t.hex || "rgba(255,255,255,.12)";
+
+    const name=document.createElement("div");
+    name.textContent = t.name || "(sans nom)";
+
+    left.appendChild(sw);
+    left.appendChild(name);
 
     const cb=document.createElement("input");
     cb.type="checkbox";
@@ -847,984 +1244,15 @@ function renderTagsDropdown(){
       tagsMode = "some";
       if(cb.checked) selectedTags.add(t.name);
       else selectedTags.delete(t.name);
+      if(selectedTags.size===0) tagsMode="all";
       persistSelectedTags();
-      setTagsBtnLabel();
+      renderTagsChip();
       applyFilters();
     });
 
-    const dot=document.createElement("span");
-    dot.className="dotc";
-    dot.style.background = t.hex || "#e2e8f0";
-
-    const name=document.createElement("div");
-    name.className="name";
-    name.textContent=t.name;
-
+    row.appendChild(left);
     row.appendChild(cb);
-    row.appendChild(dot);
-    row.appendChild(name);
     listEl.appendChild(row);
   }
 
-  setTagsBtnLabel();
-}
-function openTags(){
-  const dd=document.getElementById("tagsDropdown");
-  const btn=document.getElementById("tagsBtn");
-  const chip=document.getElementById("tagsChip");
-  dd.style.left = btn.offsetLeft + "px";
-  dd.style.top  = (chip.offsetHeight + 6) + "px";
-  dd.classList.add("open");
-  btn.setAttribute("aria-expanded","true");
-}
-function closeTags(){
-  const dd=document.getElementById("tagsDropdown");
-  dd.classList.remove("open");
-  document.getElementById("tagsBtn").setAttribute("aria-expanded","false");
-}
-function toggleTags(){
-  const dd=document.getElementById("tagsDropdown");
-  dd.classList.contains("open") ? closeTags() : openTags();
-}
-
-/* ================= EXPAND STATE ================= */
-function restoreExpanded(){
-  expandedCards=new Set();
-  try{
-    const raw=localStorage.getItem(EXPAND_KEY);
-    const arr=raw?JSON.parse(raw):[];
-    for(const id of arr) expandedCards.add(id);
-  }catch{}
-}
-function persistExpanded(){
-  localStorage.setItem(EXPAND_KEY, JSON.stringify([...expandedCards]));
-}
-
-/* ================= LOAD (Trello) ================= */
-async function fetchBoardLists(){
-  const url = `${API}/boards/${encodeURIComponent(TRELLO.boardId)}/lists?` + qs({
-    key:TRELLO.key, token:token(), fields:"name", filter:"open"
-  });
-  const res = await fetch(url);
-  if(!res.ok){ const e=new Error("Lists fetch failed"); e.status=res.status; throw e; }
-  return res.json();
-}
-async function fetchBoardCards(){
-  const url = `${API}/boards/${encodeURIComponent(TRELLO.boardId)}/cards?` + qs({
-    key:TRELLO.key, token:token(), fields:"name,start,due,idList,labels,url,badges", customFieldItems:true, filter:"open"
-  });
-  const res = await fetch(url);
-  if(!res.ok){ const e=new Error("Cards fetch failed"); e.status=res.status; throw e; }
-  return res.json();
-}
-async function fetchBoardCustomFields(){
-  const url = `${API}/boards/${encodeURIComponent(TRELLO.boardId)}/customFields?` + qs({
-    key:TRELLO.key, token:token()
-  });
-  const res = await fetch(url);
-  if(!res.ok){ const e=new Error("Custom fields fetch failed"); e.status=res.status; throw e; }
-  return res.json();
-}
-function normalizeTrelloDate(iso){ return iso || null; }
-
-async function load(){
-  hideBanner();
-  if(!token()){
-    allCards=[]; blockedCards=[]; filteredCards=[]; filteredBlockedCards=[];
-    setKpi();
-    renderGantt([]);
-    renderKanban([]);
-    showBanner("Ajoute ton token Trello pour charger le board.", "Le token est stocké localement dans ton navigateur.", {retry:false,reconnect:false});
-    return;
-  }
-
-  setLoading(true, "Chargement Trello…");
-  try{
-    const [lists,cards,customFields]=await Promise.all([
-      fetchBoardLists(),
-      fetchBoardCards(),
-      fetchBoardCustomFields()
-    ]);
-
-    listNames=new Map(lists.map(l=>[l.id,l.name]));
-    doneListIds=new Set(lists.filter(l=>DONE.has(l.name)).map(l=>l.id));
-    blockedListIds=new Set(lists.filter(l=>BLOCKED_LISTS.has(l.name)).map(l=>l.id));
-    const customFieldNames=new Map(customFields.map(f=>[f.id, f.name]));
-
-    const mappedCards = cards.map(c=>{
-      const isBlocked = blockedListIds.has(c.idList);
-      const startRaw=normalizeTrelloDate(c.start);
-      const dueRaw=normalizeTrelloDate(c.due);
-
-      if(!startRaw && !dueRaw && !isBlocked) return null;
-
-      const start=startRaw||dueRaw;
-      const end=(startRaw && dueRaw)
-        ? new Date(new Date(dueRaw).getTime()+86400000).toISOString()
-        : undefined;
-
-      const labels=(c.labels||[]).map(l=>({name:l.name||"", color:l.color||null}));
-      const firstColored=labels.find(l=>l.color)?.color;
-      const baseColor=COLORS[firstColored] || "#475569";
-
-      let reason="";
-      for(const item of (c.customFieldItems||[])){
-        const fieldName = customFieldNames.get(item.idCustomField);
-        if(fieldName !== "Raison") continue;
-        if(item.value?.text) reason = item.value.text;
-        else if(item.value?.number) reason = item.value.number;
-        break;
-      }
-
-      return {
-        id:c.id,
-        title:c.name,
-        start,
-        end,
-        due:dueRaw,
-        url:c.url,
-        list:listNames.get(c.idList)||"",
-        labels,
-        baseColor,
-        listId:c.idList,
-        hasSubtasks:(c.badges?.checkItems || 0) > 0,
-        reason
-      };
-    }).filter(Boolean);
-
-    allCards = mappedCards.filter(c=>!doneListIds.has(c.listId) && !blockedListIds.has(c.listId));
-    blockedCards = mappedCards.filter(c=>blockedListIds.has(c.listId));
-
-    rebuildTagsModel();
-    restoreSelectedTags();
-    renderTagsDropdown();
-
-    restoreExpanded();
-    applyFilters();
-
-  }catch(err){
-    const status = err?.status;
-    const isAuth = status===401 || status===400;
-    const isRate = status===429;
-    const msg = isAuth ? "Token invalide ou expiré." : isRate ? "Trello limite le rythme (rate limit)." : "Erreur de chargement Trello.";
-    const hint = isAuth
-      ? "Clique “Reconnex.” puis colle un nouveau token."
-      : isRate
-        ? "Attends quelques secondes puis réessaie."
-        : "Vérifie ta connexion réseau puis réessaie.";
-    showBanner(msg, hint, {retry:!isAuth, reconnect:true});
-    setKpi();
-  }finally{
-    setLoading(false);
-  }
-}
-
-/* ================= FILTERS + color rules ================= */
-function getHomogeneousColorIfAny(){
-  if(tagsMode==="some" && selectedTags.size===1){
-    const name=[...selectedTags][0];
-    const tag=allTags.find(t=>t.name===name);
-    return tag?.hex || null;
-  }
-  return null;
-}
-
-function applyFilters(){
-  const selected=[...selectedTags];
-
-  filteredCards = allCards.filter(c=>{
-    const tagOK = tagsMode === "none"
-      ? false
-      : (selected.length===0 || c.labels.some(l=>selected.includes((l.name||"").trim())));
-    return tagOK;
-  });
-  filteredBlockedCards = blockedCards.filter(c=>{
-    const tagOK = tagsMode === "none"
-      ? false
-      : (selected.length===0 || c.labels.some(l=>selected.includes((l.name||"").trim())));
-    return tagOK;
-  });
-
-  const homog = getHomogeneousColorIfAny();
-
-  calendar.removeAllEvents();
-  calendar.addEventSource(filteredCards.map(c=>{
-    const col = homog || c.baseColor;
-    return {
-      id:c.id, title:c.title, start:c.start, end:c.end || undefined, allDay:true,
-      url:c.url,
-      backgroundColor:col, borderColor:col, textColor:"#fff",
-      extendedProps:{ listName:c.list }
-    };
-  }));
-
-  renderGantt(filteredCards, homog);
-  renderKanban(filteredBlockedCards, homog);
-
-  setKpi();
-  if(typeof updateToggleBtn === "function") updateToggleBtn();
-  syncZoomButtonsActive();
-  writeUrlState();
-}
-
-/* ================= Header helpers ================= */
-function getViewRange(){
-  const v=calendar.view;
-  const rangeStart=day(v.currentStart);
-  const rangeEnd=day(v.currentEnd); // exclusive
-  const totalDays=Math.max(1, diffDays(rangeStart, rangeEnd));
-  return { rangeStart, rangeEnd, totalDays };
-}
-function setPercentVars(totalDays){
-  const dayP = 100 / totalDays;
-  document.documentElement.style.setProperty("--dayp", dayP + "%");
-  document.documentElement.style.setProperty("--weekp", (dayP*7) + "%");
-}
-
-/**
- * Week header aligned to our day grid:
- * - We build chunks of 7 days starting from rangeStart
- * - Each chunk has width proportional to its number of days (last chunk can be shorter)
- * -> week labels are perfectly centered over the day columns
- */
-function buildMonthWeekHeaderAligned(rangeStart, rangeEnd){
-  const totalDays = diffDays(rangeStart, rangeEnd);
-
-  const chunks=[];
-  for(let i=0;i<totalDays;i+=7){
-    const span = Math.min(7, totalDays - i);
-    const dt = new Date(rangeStart.getTime() + i*86400000);
-    chunks.push({
-      startIndex:i,
-      spanDays:span,
-      weekNo: isoWeek(dt),
-      month: dt.getMonth(),
-      year: dt.getFullYear(),
-      monthLabel: monthLabelFR(dt)
-    });
-  }
-
-  const weeksHtml = chunks.map(ch=>{
-    const wPct = (ch.spanDays / totalDays) * 100;
-    return `<div class="tickW" style="width:${wPct}%">S${ch.weekNo}</div>`;
-  }).join("");
-
-  // group consecutive chunks by month/year for month row
-  const monthGroups=[];
-  for(const ch of chunks){
-    const last=monthGroups[monthGroups.length-1];
-    if(last && last.month===ch.month && last.year===ch.year){
-      last.spanDays += ch.spanDays;
-    }else{
-      monthGroups.push({
-        month: ch.month,
-        year: ch.year,
-        label: ch.monthLabel,
-        spanDays: ch.spanDays
-      });
-    }
-  }
-
-  const monthsHtml = monthGroups.map(mg=>{
-    const wPct = (mg.spanDays / totalDays) * 100;
-    return `<div class="monthTick" style="width:${wPct}%">${esc(mg.label)}</div>`;
-  }).join("");
-
-  return { monthsHtml, weeksHtml };
-}
-
-/* ================= Checklist sub-tasks ================= */
-function subTasksFromChecklists(cardId, checklists){
-  const items=[];
-  for(const cl of (checklists||[])){
-    for(const it of (cl.checkItems||[])){
-      if(it.state === "complete") continue;
-      if(!it.due) continue;
-      items.push({
-        id: `${cardId}::${it.id}`,
-        cardId,
-        title: it.name || "(sans nom)",
-        due: it.due,
-        checklistName: cl.name || "",
-      });
-    }
-  }
-  items.sort((a,b)=>new Date(a.due)-new Date(b.due));
-  return items;
-}
-function subTasksByChecklist(cardId, checklists){
-  const groups=[];
-  for(const cl of (checklists||[])){
-    const items=[];
-    for(const it of (cl.checkItems||[])){
-      if(it.state === "complete") continue;
-      if(!it.due) continue;
-      items.push({
-        id: `${cardId}::${it.id}`,
-        cardId,
-        title: it.name || "(sans nom)",
-        due: it.due,
-        checklistName: cl.name || "",
-      });
-    }
-    if(items.length){
-      items.sort((a,b)=>new Date(a.due)-new Date(b.due));
-      groups.push({ name: cl.name || "", items });
-    }
-  }
-  return groups;
-}
-
-/* ================= Selection helpers ================= */
-function clearSelection(){
-  document.querySelectorAll(".is-selected").forEach(el=>el.classList.remove("is-selected"));
-}
-function applySelectionByKey(key){
-  clearSelection();
-  if(!key) return;
-  const els = document.querySelectorAll(`[data-rowkey="${CSS.escape(key)}"]`);
-  els.forEach(el=>el.classList.add("is-selected"));
-  if(key.startsWith("sub:")){
-    const cardId = key.split(":")[1];
-    document.querySelectorAll(`[data-rowkey="card:${CSS.escape(cardId)}"]`).forEach(el=>el.classList.add("is-selected"));
-  }
-}
-
-/* ================= Overlays: weekend + grid (pixel-perfect) ================= */
-function renderRightOverlays(rangeStart, totalDays){
-  const right = document.getElementById("gRight");
-  if(!right) return;
-
-  const weekendLayer = right.querySelector(".weekendLayer");
-  const gridLayer = right.querySelector(".gridLayer");
-  if(!weekendLayer || !gridLayer) return;
-
-  weekendLayer.innerHTML = "";
-  gridLayer.innerHTML = "";
-
-  const width = right.clientWidth || 1;
-
-  // Weekend blocks: for each Saturday, shade Saturday+Sunday
-  for(let i=0;i<totalDays;i++){
-    const dt = new Date(rangeStart.getTime() + i*86400000);
-    if(dt.getDay() === 6){
-      const span = Math.min(2, totalDays - i);
-      const left = Math.round((i * width) / totalDays);
-      const rightX = Math.round(((i + span) * width) / totalDays);
-      const w = Math.max(0, rightX - left);
-      const block = document.createElement("div");
-      block.className = "weekendBlock";
-      block.style.left = left + "px";
-      block.style.width = w + "px";
-      weekendLayer.appendChild(block);
-    }
-  }
-
-  // Grid lines: stable pixel positions (prevents thicker random lines)
-  const posMap = new Map();
-  for(let i=1;i<totalDays;i++){
-    const x = Math.round((i * width) / totalDays);
-    if(x <= 0 || x >= width) continue;
-    const isWeek = (i % 7 === 0);
-    const prev = posMap.get(x) || false;
-    posMap.set(x, prev || isWeek);
-  }
-  const xs = [...posMap.keys()].sort((a,b)=>a-b);
-  for(const x of xs){
-    const line = document.createElement("div");
-    line.className = "gridLine" + (posMap.get(x) ? " week" : "");
-    line.style.left = x + "px";
-    gridLayer.appendChild(line);
-  }
-}
-
-/* ================= Scroll sizing (hard fix) ================= */
-function forceRoadmapScrollHeight(){
-  const shell = document.querySelector("#gantt .shell");
-  const head = document.querySelector("#gantt .head");
-  const scroll = document.getElementById("roadmapScroll");
-  if(!shell || !head || !scroll) return;
-
-  const shellH = shell.clientHeight || 0;
-  const headH = head.offsetHeight || 0;
-  const target = Math.max(120, shellH - headH);
-  scroll.style.height = target + "px";
-  scroll.style.overflowY = "auto";
-}
-
-/* ================= GANTT RENDER ================= */
-function renderGantt(cards, homogeneousColor=null){
-  const g=document.getElementById("gantt");
-  const prevScrollTop = document.getElementById("roadmapScroll")?.scrollTop || 0;
-
-  if(!cards.length){
-    g.innerHTML = `
-      <div class="shell" style="padding:12px;border:1px solid var(--border);border-radius:var(--radius)">
-        <div style="font-weight:900;font-size:12px;color:var(--muted)">Aucune carte à afficher avec ces filtres.</div>
-      </div>`;
-    return;
-  }
-
-  const { rangeStart, rangeEnd, totalDays } = getViewRange();
-  const viewType = calendar.view.type;
-  setPercentVars(totalDays);
-
-  const milestoneLabel = "milestones";
-  const productsLabel = "produits";
-
-  const milestoneCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===milestoneLabel));
-  const productCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===productsLabel));
-  const regularCards = cards.filter(c=>!c.labels.some(l=>{
-    const name=(l.name||"").trim().toLowerCase();
-    return name===milestoneLabel || name===productsLabel;
-  }));
-
-  const byList=new Map();
-  for(const c of regularCards){
-    if(!byList.has(c.list)) byList.set(c.list, []);
-    byList.get(c.list).push(c);
-  }
-  const listOrder=[...byList.keys()].sort((a,b)=>a.localeCompare(b,"fr",{sensitivity:"base"}));
-  for(const k of listOrder){
-    byList.get(k).sort((a,b)=>new Date(a.start)-new Date(b.start));
-  }
-
-  function idxForDate(iso){
-    const d=day(new Date(iso));
-    return Math.max(0, Math.min(totalDays-1, diffDays(rangeStart, d)));
-  }
-  function pctForIdx(idx){ return (idx / totalDays) * 100; }
-  function pctForSpan(days){ return (days / totalDays) * 100; }
-
-  function renderBarOrMilestone(c, color){
-    const sIdx = idxForDate(c.start);
-    let spanDays = 1;
-
-    if(c.end){
-      const endInc = new Date(day(new Date(c.end)).getTime() - 86400000);
-      const eIdx = Math.max(0, Math.min(totalDays-1, diffDays(rangeStart, endInc)));
-      spanDays = Math.max(1, (eIdx - sIdx + 1));
-    }
-
-    const leftPct = pctForIdx(sIdx);
-    const widthPct = pctForSpan(spanDays);
-    const midPct = leftPct + (widthPct/2);
-
-    const overdue = isOverdue(c.due);
-
-    return c.end
-      ? `<div class="bar ${overdue?"overdue":""}"
-            data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}" data-has-subtasks="${c.hasSubtasks?"true":"false"}"
-            style="left:${leftPct}%;width:${widthPct}%;background:${color};color:#fff;border-color:${color};">
-            ${esc(c.title)}
-          </div>`
-      : `<div class="milestone ${overdue?"overdue":""}"
-            data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}" data-has-subtasks="${c.hasSubtasks?"true":"false"}"
-            style="left:${midPct}%;background:${color};"></div>`;
-  }
-
-  // Today line
-  const today = day(new Date());
-  let todayLine = "";
-  if(today >= rangeStart && today < rangeEnd){
-    const idx = diffDays(rangeStart, today);
-    const xPct = ((idx + 0.5) / totalDays) * 100;
-    todayLine = `<div class="todayline" style="left:${xPct}%"></div>`;
-  }
-
-  // Header rules:
-  const showDates = (viewType === "multiMonth1");
-  const showDays  = (viewType === "multiMonth1");
-  const showMonthWeek = (viewType === "multiMonthQuarter" || viewType === "multiMonth6");
-
-  const dayLetters = ['L','M','M','J','V','S','D'];
-  const datesHtml = showDates ? Array.from({length: totalDays}).map((_,i)=>{
-    const dt = new Date(rangeStart.getTime() + i*86400000);
-    return `<div class="datetick">${String(dt.getDate()).padStart(2,"0")}</div>`;
-  }).join("") : "";
-
-  const daysHtml = showDays ? Array.from({length: totalDays}).map((_,i)=>{
-    const dt = new Date(rangeStart.getTime() + i*86400000);
-    const di = (dt.getDay() + 6) % 7;
-    const isWE = di >= 5;
-    return `<div class="daytick ${isWE?'we':''}">${dayLetters[di]}</div>`;
-  }).join("") : "";
-
-  let monthsHtml="", weeksHtml="";
-  if(showMonthWeek){
-    const h = buildMonthWeekHeaderAligned(rangeStart, rangeEnd);
-    monthsHtml = h.monthsHtml;
-    weeksHtml = h.weeksHtml;
-  }
-
-  // Rows
-  let leftHtml = "";
-  let rightHtml = "";
-
-  leftHtml += `<div class="rowL" data-rowkey="card:milestones" style="cursor:default;">
-    <div class="chev"></div>
-    <div class="title" style="font-size:11px;color:var(--muted);">Milestones (${milestoneCards.length})</div>
-    <div class="due"></div>
-  </div>`;
-  {
-    let bars="";
-    const sorted=[...milestoneCards].sort((a,b)=>new Date(a.start)-new Date(b.start));
-    for(const c of sorted){
-      const color = homogeneousColor || c.baseColor;
-      bars += renderBarOrMilestone(c, color);
-    }
-    rightHtml += `<div class="rowR" data-rowkey="card:milestones">${bars}</div>`;
-  }
-
-  leftHtml += `<div class="rowL" data-rowkey="card:produits" style="cursor:default;">
-    <div class="chev"></div>
-    <div class="title" style="font-size:11px;color:var(--muted);">Produits (${productCards.length})</div>
-    <div class="due"></div>
-  </div>`;
-  {
-    let bars="";
-    const sorted=[...productCards].sort((a,b)=>new Date(a.start)-new Date(b.start));
-    for(const c of sorted){
-      const color = homogeneousColor || c.baseColor;
-      bars += renderBarOrMilestone(c, color);
-    }
-    rightHtml += `<div class="rowR" data-rowkey="card:produits">${bars}</div>`;
-  }
-
-  for(const listName of listOrder){
-    for(const c of byList.get(listName)){
-      const expanded = expandedCards.has(c.id);
-      const hasSubtasks = c.hasSubtasks;
-      const chev = !hasSubtasks ? "" : (expanded ? "▾" : "▸");
-      const dueTxt = fmtDue(c.due);
-
-      leftHtml += `
-        <div class="rowL" data-kind="card" data-card="${esc(c.id)}" data-url="${esc(c.url||"")}"
-             data-has-subtasks="${hasSubtasks?"true":"false"}" data-rowkey="card:${esc(c.id)}">
-          <div class="chev">${chev}</div>
-          <div class="title">${esc(c.title)}</div>
-          <div class="due">${esc(dueTxt)}</div>
-        </div>`;
-
-      const color = homogeneousColor || c.baseColor;
-      rightHtml += `<div class="rowR" data-rowkey="card:${esc(c.id)}">${renderBarOrMilestone(c, color)}</div>`;
-
-      if(expanded && hasSubtasks){
-        const loadedChecklists = getCachedChecklists(c.id);
-        const grouped = loadedChecklists ? subTasksByChecklist(c.id, loadedChecklists) : null;
-
-        if(!loadedChecklists){
-          leftHtml += `<div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-rowkey="sub:${esc(c.id)}:loading">
-            <span class="dot" style="background:#cbd5e1"></span><div class="stitle">Chargement…</div><div class="sdue"></div>
-          </div>`;
-          rightHtml += `<div class="subR" data-rowkey="sub:${esc(c.id)}:loading"></div>`;
-        } else if(!grouped || grouped.length === 0){
-          leftHtml += `<div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-rowkey="sub:${esc(c.id)}:empty">
-            <span class="dot" style="background:#cbd5e1"></span><div class="stitle">(aucune sous-tâche datée)</div><div class="sdue"></div>
-          </div>`;
-          rightHtml += `<div class="subR" data-rowkey="sub:${esc(c.id)}:empty"></div>`;
-        } else {
-          for(const group of grouped){
-            const gkey = `check:${c.id}:${group.name||"Checklist"}`;
-            leftHtml += `<div class="checkL" data-card="${esc(c.id)}" data-rowkey="${esc(gkey)}"><div class="ctitle">${esc(group.name || "Checklist")}</div></div>`;
-            rightHtml += `<div class="subR" data-rowkey="${esc(gkey)}"></div>`;
-
-            for(const st of group.items){
-              const di = idxForDate(st.due);
-              const xPct = ((di + 0.5) / totalDays) * 100;
-              const dueLabel = fmtDue(st.due);
-              const rkey = `sub:${c.id}:${st.id}`;
-
-              leftHtml += `
-                <div class="subL" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}" data-rowkey="${esc(rkey)}">
-                  <span class="dot" style="background:${color}"></span>
-                  <div class="stitle">${esc(st.title)}</div>
-                  <div class="sdue">${esc(dueLabel)}</div>
-                </div>`;
-              const overdueSub = isOverdue(st.due);
-              rightHtml += `
-                <div class="subR" data-rowkey="${esc(rkey)}">
-                  <div class="milestone ${overdueSub?"overdue":""}" data-kind="sub" data-card="${esc(c.id)}" data-sub="${esc(st.id)}"
-                       style="left:${xPct}%;background:${color};"></div>
-                </div>`;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  g.innerHTML = `
-    <div class="shell">
-      <div class="head">
-        <div class="hl"></div>
-        <div class="hr">
-          ${showMonthWeek ? `<div class="rowline">${monthsHtml}</div>` : ``}
-          ${showMonthWeek ? `<div class="rowline">${weeksHtml}</div>` : ``}
-          ${showDates ? `<div class="dateline">${datesHtml}</div>` : ``}
-          ${showDays  ? `<div class="dayline">${daysHtml}</div>` : ``}
-        </div>
-      </div>
-
-      <div class="scroll" id="roadmapScroll">
-        <div class="left" id="gLeft">${leftHtml}</div>
-        <div class="right" id="gRight">
-          <div class="weekendLayer"></div>
-          <div class="gridLayer"></div>
-          ${todayLine}
-          ${rightHtml}
-        </div>
-      </div>
-    </div>`;
-
-  const scrollEl = document.getElementById("roadmapScroll");
-  if(scrollEl) scrollEl.scrollTop = prevScrollTop;
-
-  bindGanttInteractions();
-  applySelectionByKey(selectedRowKey);
-
-  requestAnimationFrame(()=>{
-    forceRoadmapScrollHeight();
-    renderRightOverlays(rangeStart, totalDays);
-  });
-}
-
-/* ================= INTERACTIONS ================= */
-async function fetchCardChecklists(cardId){
-  const url = `${API}/cards/${encodeURIComponent(cardId)}/checklists?` + qs({key:TRELLO.key, token:token()});
-  const res = await fetch(url);
-  if(!res.ok){
-    const err=new Error("Checklist fetch failed");
-    err.status=res.status;
-    throw err;
-  }
-  return res.json();
-}
-async function ensureChecklistsLoaded(cardId){
-  const cached = getCachedChecklists(cardId);
-  if(cached) return cached;
-  try{
-    const cl = await fetchCardChecklists(cardId);
-    setCachedChecklists(cardId, cl);
-    return cl;
-  }catch(err){
-    setCachedChecklists(cardId, []);
-    if(err?.status===401 || err?.status===400){
-      showBanner("Token invalide ou expiré.", "Reconnex. avec un nouveau token.", {retry:false,reconnect:true});
-    }
-    return [];
-  }
-}
-function setSelectedRow(key){
-  selectedRowKey = key;
-  applySelectionByKey(key);
-}
-function bindGanttInteractions(){
-  const root=document.getElementById("gantt");
-  root.onclick = async (e)=>{
-    const el = e.target.closest("[data-kind], .rowL, .subL");
-    if(!el) return;
-
-    const isOpenShortcut = e.ctrlKey || e.metaKey;
-    const url = el.getAttribute("data-url");
-    if(isOpenShortcut && url){
-      window.open(url,"_blank","noopener,noreferrer");
-      return;
-    }
-
-    const kind = el.getAttribute("data-kind");
-    const cardId = el.getAttribute("data-card");
-
-    if(el.getAttribute("data-rowkey")){
-      setSelectedRow(el.getAttribute("data-rowkey"));
-    }
-
-    if(kind === "sub" && cardId){
-      const subId = el.getAttribute("data-sub");
-      if(subId) setSelectedRow(`sub:${cardId}:${subId}`);
-      return;
-    }
-
-    if(kind === "card" && cardId){
-      setSelectedRow(`card:${cardId}`);
-
-      if(el.getAttribute("data-has-subtasks") !== "true") return;
-
-      if(expandedCards.has(cardId)) expandedCards.delete(cardId);
-      else expandedCards.add(cardId);
-      persistExpanded();
-
-      if(expandedCards.has(cardId)){
-        await ensureChecklistsLoaded(cardId);
-      }
-
-      renderGantt(filteredCards, getHomogeneousColorIfAny());
-      if(typeof updateToggleBtn === "function") updateToggleBtn();
-      return;
-    }
-  };
-}
-
-/* ================= KANBAN ================= */
-function renderKanban(cards, homogeneousColor=null){
-  const k=document.getElementById("kanban");
-  if(!cards.length){
-    k.innerHTML = `<div style="font-weight:900;font-size:12px;color:var(--muted);padding:6px">Aucune carte bloquée avec ces filtres.</div>`;
-    return;
-  }
-
-  const byList=new Map();
-  for(const c of cards){
-    if(!byList.has(c.list)) byList.set(c.list, []);
-    byList.get(c.list).push(c);
-  }
-  const listOrder=[...byList.keys()].sort((a,b)=>a.localeCompare(b,"fr",{sensitivity:"base"}));
-  for(const kname of listOrder){
-    byList.get(kname).sort((a,b)=>{
-      const da = a.start || a.due || 0;
-      const db = b.start || b.due || 0;
-      return new Date(da) - new Date(db);
-    });
-  }
-
-  const cols=listOrder.map(listName=>{
-    const cardsHtml = byList.get(listName).map(c=>{
-      const reason = c.reason || "";
-      const col = homogeneousColor || c.baseColor;
-      return `
-        <div class="kcard" style="border-left-color:${col}">
-          ${esc(c.title)}
-          ${reason ? `<div class="kmeta">${esc(reason)}</div>` : ""}
-        </div>`;
-    }).join("");
-    return `<div class="kcol"><h3>${esc(listName)}</h3>${cardsHtml || `<div class="kmeta">Aucune carte</div>`}</div>`;
-  }).join("");
-
-  k.innerHTML = `<div class="kanbanGrid">${cols}</div>`;
-}
-
-/* ================= View ================= */
-function setView(view){
-  const gantt=document.getElementById("gantt");
-  const kanban=document.getElementById("kanban");
-  const calendarEl=document.getElementById("calendar");
-  const tabG=document.getElementById("tabGantt");
-  const tabK=document.getElementById("tabKanban");
-
-  const showG = view === "gantt";
-  gantt.style.display = showG ? "" : "none";
-  kanban.style.display = showG ? "none" : "block";
-  calendarEl.style.display = showG ? "" : "none";
-  tabG.classList.toggle("active", showG);
-  tabK.classList.toggle("active", !showG);
-
-  writeUrlState();
-}
-
-/* ================= FullCalendar active buttons ================= */
-function syncZoomButtonsActive(){
-  const vt = calendar?.view?.type;
-  const b1 = document.querySelector(".fc-m1-button");
-  const b3 = document.querySelector(".fc-m3-button");
-  const b6 = document.querySelector(".fc-m6-button");
-  [b1,b3,b6].forEach(b=>b && b.classList.remove("is-active"));
-  if(vt==="multiMonth1" && b1) b1.classList.add("is-active");
-  else if(vt==="multiMonth6" && b6) b6.classList.add("is-active");
-  else if(b3) b3.classList.add("is-active");
-}
-
-/* ================= INIT ================= */
-document.addEventListener("DOMContentLoaded",()=>{
-  loadPersistentChecklistCache();
-
-  calendar=new FullCalendar.Calendar(document.getElementById("calendar"),{
-    locale:"fr",
-    initialView:"multiMonthQuarter",
-    views:{
-      multiMonthQuarter:{type:"multiMonth",duration:{months:3}},
-      multiMonth1:{type:"multiMonth",duration:{months:1}},
-      multiMonth6:{type:"multiMonth",duration:{months:6}}
-    },
-    customButtons:{
-      m1:{ text:"1M", click:()=>calendar.changeView("multiMonth1") },
-      m3:{ text:"3M", click:()=>calendar.changeView("multiMonthQuarter") },
-      m6:{ text:"6M", click:()=>calendar.changeView("multiMonth6") }
-    },
-    headerToolbar:{left:"prev,next m1,m3,m6",center:"title",right:""},
-    datesSet:()=>{
-      applyFilters();
-      syncZoomButtonsActive();
-      requestAnimationFrame(forceRoadmapScrollHeight);
-    }
-  });
-  calendar.render();
-  syncZoomButtonsActive();
-
-  // banner
-  document.getElementById("bannerClose").onclick=()=>hideBanner();
-  document.getElementById("bannerRetry").onclick=()=>load();
-  document.getElementById("bannerReconnect").onclick=()=>{ document.getElementById("tokenInput")?.focus(); };
-
-  // open/close all subtasks
-  const toggleBtn = document.getElementById("toggleAll");
-  updateToggleBtn = function(){
-    const ids = (filteredCards||[]).filter(c=>c.hasSubtasks).map(c=>c.id);
-    if(!ids.length){
-      toggleBtn.disabled=true;
-      toggleBtn.textContent="Afficher les sous-tâches";
-      return;
-    }
-    toggleBtn.disabled=false;
-    const allOpen = ids.every(id=>expandedCards.has(id));
-    toggleBtn.textContent = allOpen ? "Cacher les sous-tâches" : "Afficher les sous-tâches";
-  };
-
-  toggleBtn.onclick = async ()=>{
-    const ids = (filteredCards||[]).filter(c=>c.hasSubtasks).map(c=>c.id);
-    if(!ids.length) return;
-
-    const allOpen = ids.every(id=>expandedCards.has(id));
-    if(allOpen){
-      ids.forEach(id=>expandedCards.delete(id));
-      persistExpanded();
-      renderGantt(filteredCards, getHomogeneousColorIfAny());
-      updateToggleBtn();
-      return;
-    }
-
-    ids.forEach(id=>expandedCards.add(id));
-    persistExpanded();
-    renderGantt(filteredCards, getHomogeneousColorIfAny());
-    updateToggleBtn();
-
-    const toLoad = ids.filter(id=>!getCachedChecklists(id));
-    if(toLoad.length>=8) setLoading(true, "Chargement des checklists…");
-    await Promise.allSettled(toLoad.map(async (cardId)=>{ await ensureChecklistsLoaded(cardId); }));
-    if(toLoad.length>=8) setLoading(false);
-
-    renderGantt(filteredCards, getHomogeneousColorIfAny());
-  };
-
-  // token
-  document.getElementById("logout").onclick=()=>{
-    clearToken();
-    hideBanner();
-    allCards=[]; blockedCards=[]; filteredCards=[]; filteredBlockedCards=[];
-    selectedRowKey=null;
-    renderGantt([]);
-    renderKanban([]);
-    setKpi();
-    showBanner("Token supprimé.", "Colle un token Trello pour recharger.", {retry:false,reconnect:false});
-  };
-  document.getElementById("saveToken").onclick=()=>{
-    const v=(document.getElementById("tokenInput").value||"").trim();
-    if(!v) return;
-    setToken(v);
-    document.getElementById("tokenInput").value="";
-    load();
-  };
-
-  // tags dropdown
-  const tagsBtn=document.getElementById("tagsBtn");
-  const dd=document.getElementById("tagsDropdown");
-  tagsBtn.addEventListener("click", (e)=>{ e.stopPropagation(); toggleTags(); });
-  dd.addEventListener("click", (e)=>e.stopPropagation());
-  document.getElementById("tagsAll").addEventListener("click", ()=>{
-    tagsMode="all";
-    selectedTags=new Set(allTags.map(t=>t.name));
-    persistSelectedTags();
-    renderTagsDropdown();
-    applyFilters();
-  });
-  document.getElementById("tagsNone").addEventListener("click", ()=>{
-    tagsMode="none";
-    selectedTags.clear();
-    persistSelectedTags();
-    renderTagsDropdown();
-    applyFilters();
-  });
-  document.addEventListener("click", ()=>closeTags());
-  document.addEventListener("keydown", (e)=>{ if(e.key==="Escape") closeTags(); });
-
-  // view tabs
-  document.getElementById("tabGantt").addEventListener("click", ()=>setView("gantt"));
-  document.getElementById("tabKanban").addEventListener("click", ()=>setView("kanban"));
-
-  // fullscreen
-  const fsBtn=document.getElementById("fsBtn");
-  function setFsIcon(){
-    const isFs = !!document.fullscreenElement;
-    fsBtn.textContent = isFs ? "⤡" : "⤢";
-    fsBtn.title = isFs ? "Quitter le plein écran" : "Plein écran";
-  }
-  fsBtn.addEventListener("click", async ()=>{
-    try{
-      if(document.fullscreenElement) await document.exitFullscreen();
-      else await document.documentElement.requestFullscreen();
-      setFsIcon();
-    }catch{}
-  });
-  document.addEventListener("fullscreenchange", setFsIcon);
-  setFsIcon();
-
-  // resize: re-render + recompute scroll height
-  window.addEventListener("resize", ()=>{
-    clearTimeout(window.__rT);
-    window.__rT=setTimeout(()=>{
-      renderGantt(filteredCards, getHomogeneousColorIfAny());
-      forceRoadmapScrollHeight();
-    }, 120);
-  });
-
-  restoreExpanded();
-
-  // URL hydration
-  (function hydrateFromUrl(){
-    let s=readUrlState();
-    if(!location.search && localStorage.getItem(URL_STATE_KEY)){
-      try{
-        const u=new URL(localStorage.getItem(URL_STATE_KEY), location.origin);
-        s = {
-          ...s,
-          ...{
-            view: u.searchParams.get("view"),
-            zoom: u.searchParams.get("zoom"),
-            tags: (u.searchParams.get("tags")||"") ? (u.searchParams.get("tags")||"").split(",").map(decodeURIComponent) : null
-          }
-        };
-      }catch{}
-    }
-
-    if(s.view==="kanban") setView("kanban");
-    else setView("gantt");
-
-    if(s.zoom==="1") calendar.changeView("multiMonth1");
-    else if(s.zoom==="6") calendar.changeView("multiMonth6");
-    else calendar.changeView("multiMonthQuarter");
-
-    syncZoomButtonsActive();
-  })();
-
-  load().then(()=>{
-    const st=readUrlState();
-    if(st.tags && st.tags.length){
-      if(st.tags.length===1 && st.tags[0]===TAGS_NONE){
-        tagsMode="none";
-        selectedTags.clear();
-      }else{
-        tagsMode="some";
-        selectedTags=new Set(st.tags.filter(t=>allTags.some(x=>x.name===t)));
-      }
-      persistSelectedTags();
-      renderTagsDropdown();
-      applyFilters();
-    }else{
-      restoreSelectedTags();
-      renderTagsDropdown();
-      applyFilters();
-    }
-  });
-});
-</script>
-</body>
-</html>
+  renderTags
