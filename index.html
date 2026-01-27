@@ -786,6 +786,8 @@ function rebuildTagsModel(){
     for(const l of c.labels){
       const name=(l.name||"").trim();
       if(!name) continue;
+      // "Sprint VN" must not appear in tags dropdown
+      if(name.toLowerCase() === "sprint vn") continue;
       if(!map.has(name)){
         const hex = l.color ? (COLORS[l.color] || null) : null;
         map.set(name,{name,color:l.color||null,hex});
@@ -1271,12 +1273,32 @@ function renderGantt(cards, homogeneousColor=null){
 
   const milestoneLabel = "milestones";
   const productsLabel = "produits";
+  const sprintVnLabel = "sprint vn";
+  const sprintVnGateLabels = new Set([
+    "plateformes build",
+    "plateformes tma",
+    "vw club build",
+    "vw club tma"
+  ]);
+
+  function isSprintVnLineEnabled(){
+    if(tagsMode === "none") return false;
+    // "active" = checkbox checked in tags filter UI
+    // Works for: explicit selections (tagsMode="some") and "Tous" button (all checked).
+    for(const t of selectedTags){
+      if(sprintVnGateLabels.has(String(t||"").trim().toLowerCase())) return true;
+    }
+    return false;
+  }
 
   const milestoneCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===milestoneLabel));
   const productCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===productsLabel));
+  const sprintVNCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===sprintVnLabel));
+  const showSprintVnLine = isSprintVnLineEnabled();
+
   const regularCards = cards.filter(c=>!c.labels.some(l=>{
     const name=(l.name||"").trim().toLowerCase();
-    return name===milestoneLabel || name===productsLabel;
+    return name===milestoneLabel || name===productsLabel || name===sprintVnLabel;
   }));
 
   const byList=new Map();
@@ -1375,6 +1397,25 @@ function renderGantt(cards, homogeneousColor=null){
     }
     rightHtml += `<div class="rowR" data-rowkey="card:milestones">${bars}</div>`;
   }
+
+  // Sprint VN (same display as Milestones) — only when one of the gate filters is active
+  if(showSprintVnLine){
+    leftHtml += `<div class="rowL" data-rowkey="card:sprintvn" style="cursor:default;">
+      <div class="chev"></div>
+      <div class="title" style="font-size:11px;color:var(--muted);">Sprint VN (${sprintVNCards.length})</div>
+      <div class="due"></div>
+    </div>`;
+    {
+      let bars="";
+      const sorted=[...sprintVNCards].sort((a,b)=>new Date(a.start)-new Date(b.start));
+      for(const c of sorted){
+        const color = homogeneousColor || c.baseColor;
+        bars += renderBarOrMilestone(c, color);
+      }
+      rightHtml += `<div class="rowR" data-rowkey="card:sprintvn">${bars}</div>`;
+    }
+  }
+
 
   leftHtml += `<div class="rowL" data-rowkey="card:produits" style="cursor:default;">
     <div class="chev"></div>
