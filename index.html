@@ -1293,8 +1293,13 @@ function renderGantt(cards, homogeneousColor=null){
 
   const milestoneCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===milestoneLabel));
   const productCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===productsLabel));
-  const sprintVNCards = cards.filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===sprintVnLabel));
+
+  // Sprint VN cards are NOT filtered by the tags dropdown (since "Sprint VN" is hidden there).
+  // They should appear when the gate filters are active, even if they don't match other selected tags.
   const showSprintVnLine = isSprintVnLineEnabled();
+  const sprintVNCards = showSprintVnLine
+    ? (allCards||[]).filter(c=>c.labels.some(l=>(l.name||"").trim().toLowerCase()===sprintVnLabel))
+    : [];
 
   const regularCards = cards.filter(c=>!c.labels.some(l=>{
     const name=(l.name||"").trim().toLowerCase();
